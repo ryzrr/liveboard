@@ -1,52 +1,58 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
 /node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
-# testing
-/coverage
-
-# next.js
+# Next.js
 /.next/
 /out/
-
-# production
 /build
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# Plan (confidential, never commit)
-*.pdf
-/checklist.md
+# ─── Environment — .env.example is safe to commit; all others are not ────────
+.env
+.env.local
+.env.*.local
+# Note: .env.example is intentionally NOT listed here
 
-# Python
+# ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+venv/
+.pytest_cache/
+htmlcov/
+.coverage
+packages/sdk-python/build/
+packages/sdk-python/dist/
 
-# SDK build output
+# ─── JS SDK build ────────────────────────────────────────────────────────────
 packages/sdk-js/dist/
 packages/sdk-js/node_modules/
-packages/sdk-python/dist/
+packages/sdk-js/.rollup.cache/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.pem
+
+# ─── Tools ───────────────────────────────────────────────────────────────────
+.vercel
+*.swp
+*.swo
+
+# ─── Confidential — never commit the build plan ──────────────────────────────
+*.pdf
+/checklist.md
+.env.example 

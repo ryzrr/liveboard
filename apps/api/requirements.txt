@@ -2,12 +2,25 @@ fastapi==0.115.0
 uvicorn[standard]==0.31.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
-redis==5.1.1
+
+# Database
 asyncpg==0.29.0
-alembic==1.13.3
 sqlalchemy==2.0.35
+alembic==1.13.3
+psycopg2-binary==2.9.9
+
+# Cache / message bus
+redis==5.1.1
+
+# AI (Phase 5)
 anthropic==0.34.2
+
+# Alert workers (Phase 4)
 celery==5.4.0
+
+# Auth
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+
+# HTTP client (smoke test + SDK calls)
 httpx==0.27.2
