@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "liveboard-sdk"
+version = "0.1.0"
+description = "LiveBoard SDK — zero-config API observability for FastAPI, Django, and Flask"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["api", "observability", "monitoring", "fastapi", "django"]
+dependencies = [
+  "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "fastapi", "django", "flask"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["liveboard*"]

@@ -35,3 +35,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Plan (confidential, never commit)
+*.pdf
+/checklist.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# SDK build output
+packages/sdk-js/dist/
+packages/sdk-js/node_modules/
+packages/sdk-python/dist/
