@@ -1,17 +1,33 @@
-"""LiveBoard Python SDK — implementations added in Phase 2b."""
+"""
+LiveBoard Python SDK — zero-config API observability.
 
-__version__ = "0.1.0"
+Quick start
+-----------
+FastAPI / Starlette (ASGI):
+    from liveboard.asgi import LiveBoardMiddleware
+    app.add_middleware(LiveBoardMiddleware, api_key="lb_live_...")
 
-# Middleware classes are stubbed here; full implementations come in Phase 2b.
+Django:
+    # settings.py
+    MIDDLEWARE = [..., "liveboard.django.LiveBoardMiddleware"]
+    LIVEBOARD = {"API_KEY": "lb_live_..."}
 
+Flask:
+    from liveboard.flask import init_liveboard
+    init_liveboard(app, api_key="lb_live_...")
+"""
 
-class LiveBoardMiddleware:
-    """ASGI middleware for FastAPI / Starlette. Implemented in Phase 2b."""
+from ._version import SDK_VERSION
+from ._config import LiveBoardConfig
 
-    def __init__(self, app, *, api_key: str, **kwargs):
-        raise NotImplementedError("ASGI middleware coming in Phase 2b")
+__version__ = SDK_VERSION
 
-
-def init_liveboard(app, *, api_key: str, **kwargs):
-    """Flask integration. Implemented in Phase 2b."""
-    raise NotImplementedError("Flask integration coming in Phase 2b")
+__all__ = [
+    "SDK_VERSION",
+    "LiveBoardConfig",
+    # Framework adapters are imported from their own submodules to avoid
+    # pulling in framework-specific code when only one framework is installed:
+    #   from liveboard.asgi   import LiveBoardMiddleware
+    #   from liveboard.django import LiveBoardMiddleware
+    #   from liveboard.flask  import init_liveboard
+]

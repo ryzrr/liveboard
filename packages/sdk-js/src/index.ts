@@ -1,19 +1,9 @@
-export interface LiveBoardConfig {
-  apiKey: string;
-  ingestUrl?: string;
-  captureBody?: boolean;
-  sampleRate?: number;
-  ignoreRoutes?: string[];
-  redactHeaders?: string[];
-}
+import { createExpressMiddleware } from "./express";
+import { createFastifyPlugin } from "./fastify";
 
-// Implementations added in Phase 2
-export const middleware = (_config: LiveBoardConfig) => {
-  throw new Error("Express middleware not yet implemented — coming in Phase 2");
-};
+export { createExpressMiddleware as middleware };
+export { createFastifyPlugin as fastifyPlugin };
+export type { LiveBoardConfig, EventPayload, ResolvedConfig } from "./types";
+export { SDK_VERSION } from "./version";
 
-export const fastifyPlugin = async () => {
-  throw new Error("Fastify plugin not yet implemented — coming in Phase 2");
-};
-
-export default { middleware, fastifyPlugin };
+export default { middleware: createExpressMiddleware, fastifyPlugin: createFastifyPlugin };

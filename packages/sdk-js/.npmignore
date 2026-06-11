@@ -1,0 +1,7 @@
+src/
+tsconfig.json
+rollup.config.mjs
+*.map
+.eslintrc*
+*.test.ts
+*.spec.ts
