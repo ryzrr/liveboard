@@ -12,6 +12,9 @@ psycopg2-binary==2.9.9
 # Cache / message bus
 redis==5.1.1
 
+# Real-time (Phase 3)
+python-socketio[asyncio_client]==5.11.4
+
 # AI (Phase 5)
 anthropic==0.34.2
 

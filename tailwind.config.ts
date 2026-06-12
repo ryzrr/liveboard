@@ -36,8 +36,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "Arial", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "Arial", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        display: ["var(--font-space-grotesk)", "'Space Grotesk'", "system-ui", "sans-serif"],
       },
       borderRadius: {
         DEFAULT: "8px",

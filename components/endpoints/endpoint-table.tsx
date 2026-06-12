@@ -10,11 +10,12 @@ interface EndpointTableProps {
   endpoints: Endpoint[];
   onSelect: (endpoint: Endpoint) => void;
   selected?: string;
+  compareSelected?: string[];
 }
 
 type SortKey = keyof Pick<Endpoint, "requests24h" | "errorRate" | "p50" | "p95" | "p99" | "healthScore">;
 
-export function EndpointTable({ endpoints, onSelect, selected }: EndpointTableProps) {
+export function EndpointTable({ endpoints, onSelect, selected, compareSelected = [] }: EndpointTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("requests24h");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -59,7 +60,8 @@ export function EndpointTable({ endpoints, onSelect, selected }: EndpointTablePr
             onClick={() => onSelect(ep)}
             className={cn(
               "w-full grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_80px_36px] gap-2 px-4 py-2.5 items-center text-left hover:bg-[#151515] transition-colors",
-              selected === ep.id && "bg-blue-dim border-l-2 border-l-blue"
+              selected === ep.id && "bg-blue-dim border-l-2 border-l-blue",
+              compareSelected.includes(ep.id) && "bg-[#0D1520] border-l-2 border-l-[#A855F7]"
             )}
           >
             <div className="flex items-center gap-2 min-w-0">

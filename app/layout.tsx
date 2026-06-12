@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-space-grotesk",
+});
+
 export const metadata: Metadata = {
-  title: "LiveBoard — API Monitoring",
+  title: "Liveboard — API Observability",
   description: "Real-time API observability, distributed traces, and intelligent alerts",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-[#0A0A0A] text-[#F5F5F5] antialiased">
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <body className="bg-[#0A0A0A] text-[#F5F5F5] antialiased font-sans">
         {children}
       </body>
     </html>

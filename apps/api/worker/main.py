@@ -3,13 +3,18 @@ Aggregation worker entry point.
 
 Run as:  python -m worker.main
 Docker:  CMD ["python", "-m", "worker.main"]
+
+Two concurrent tasks:
+  aggregator  — XREADGROUP → TimescaleDB COPY (at-least-once delivery)
+  metrics     — query last-minute stats per project → Redis pub/sub every 1 s
 """
 
 import asyncio
 import logging
 import signal
 
-from worker.aggregator import run
+from worker.aggregator import run as run_aggregator
+from worker.metrics import run as run_metrics
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,17 +25,19 @@ logger = logging.getLogger(__name__)
 
 async def main() -> None:
     loop = asyncio.get_running_loop()
-    task = asyncio.create_task(run())
+    agg_task = asyncio.create_task(run_aggregator(), name="aggregator")
+    metrics_task = asyncio.create_task(run_metrics(), name="metrics-publisher")
 
     def _shutdown(sig: signal.Signals) -> None:
         logger.info("Received %s, stopping worker", sig.name)
-        task.cancel()
+        agg_task.cancel()
+        metrics_task.cancel()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, _shutdown, sig)
 
     try:
-        await task
+        await asyncio.gather(agg_task, metrics_task, return_exceptions=True)
     except asyncio.CancelledError:
         pass
 

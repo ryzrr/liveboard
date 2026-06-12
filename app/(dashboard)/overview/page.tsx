@@ -10,15 +10,19 @@ import { LiveLogTable } from "@/components/dashboard/live-log-table";
 import { IncidentPanel } from "@/components/dashboard/incident-panel";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeRange } from "@/hooks/use-time-range";
-import { getStatCards, generateChartData, getIncidents } from "@/lib/mock-data";
+import { useMetrics } from "@/hooks/use-websocket";
+import { generateChartData, getIncidents } from "@/lib/mock-data";
 
 const SPARK_COLORS = ["#378ADD", "#EF4444", "#F59E0B", "#22C55E"];
 
 export default function OverviewPage() {
   const { range, setRange, hours } = useTimeRange("24h");
-  const cards = useMemo(() => getStatCards(), []);
   const chartData = useMemo(() => generateChartData(hours), [hours]);
   const incidents = useMemo(() => getIncidents(), []);
+
+  // Live stat cards via Socket.io — falls back to placeholder values while connecting
+  const apiKey = process.env.NEXT_PUBLIC_LIVEBOARD_API_KEY ?? null;
+  const cards = useMetrics(apiKey);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -30,7 +34,7 @@ export default function OverviewPage() {
       <div className="flex-1 flex gap-0">
         {/* Main content */}
         <div className="flex-1 min-w-0 p-5 space-y-5">
-          {/* Stat cards */}
+          {/* Stat cards — animated on each Socket.io metric update */}
           <div className="grid grid-cols-4 gap-3">
             {cards.map((card, i) => (
               <StatCardComponent key={card.label} card={card} sparkColor={SPARK_COLORS[i]} />
@@ -66,7 +70,7 @@ export default function OverviewPage() {
             </Card>
           </div>
 
-          {/* Live log */}
+          {/* Live log — real SSE stream */}
           <LiveLogTable />
         </div>
 

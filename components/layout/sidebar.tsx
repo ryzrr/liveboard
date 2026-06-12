@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LiveboardIcon } from "@/components/logo";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
@@ -29,11 +30,11 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col border-r border-[#1E1E1E] bg-[#0A0A0A] z-40">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-12 border-b border-[#1E1E1E]">
-        <div className="h-6 w-6 rounded bg-blue flex items-center justify-center flex-shrink-0">
-          <Activity className="h-3.5 w-3.5 text-white" />
-        </div>
-        <span className="text-sm font-semibold tracking-tight text-[#F5F5F5]">LiveBoard</span>
+      <div className="flex items-center gap-2 px-4 h-12 border-b border-[#1E1E1E]">
+        <LiveboardIcon size={22} />
+        <span className="text-sm font-bold tracking-tight text-[#F5F5F5] font-display">
+          Liveboard
+        </span>
       </div>
 
       {/* Project Selector */}

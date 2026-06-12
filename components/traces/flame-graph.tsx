@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Trace, TraceSpan } from "@/lib/types";
 
@@ -7,6 +8,42 @@ interface FlameGraphProps {
   trace: Trace;
   onSpanClick: (span: TraceSpan) => void;
   selectedSpan?: string;
+  highlightCriticalPath?: boolean;
+}
+
+function computeCriticalPath(spans: TraceSpan[]): Set<string> {
+  const childMap = new Map<string | undefined, TraceSpan[]>();
+  for (const span of spans) {
+    const key = span.parentId;
+    if (!childMap.has(key)) childMap.set(key, []);
+    childMap.get(key)!.push(span);
+  }
+
+  const criticalIds = new Set<string>();
+
+  function walk(spanId: string | undefined): number {
+    const children = childMap.get(spanId) ?? [];
+    if (children.length === 0) {
+      if (spanId) criticalIds.add(spanId);
+      return 0;
+    }
+    let maxChildDuration = -1;
+    let bestChild: TraceSpan | null = null;
+    for (const child of children) {
+      const subtreeDuration = child.duration + walk(child.id);
+      if (subtreeDuration > maxChildDuration) {
+        maxChildDuration = subtreeDuration;
+        bestChild = child;
+      }
+    }
+    if (bestChild) criticalIds.add(bestChild.id);
+    if (spanId) criticalIds.add(spanId);
+    return maxChildDuration;
+  }
+
+  const roots = spans.filter((s) => !s.parentId);
+  for (const root of roots) walk(root.id);
+  return criticalIds;
 }
 
 const SERVICE_COLORS: Record<string, string> = {
@@ -18,8 +55,12 @@ const SERVICE_COLORS: Record<string, string> = {
   "cache-redis": "#EF4444",
 };
 
-export function FlameGraph({ trace, onSpanClick, selectedSpan }: FlameGraphProps) {
+export function FlameGraph({ trace, onSpanClick, selectedSpan, highlightCriticalPath }: FlameGraphProps) {
   const totalDuration = trace.totalDuration;
+  const criticalPath = useMemo(
+    () => (highlightCriticalPath ? computeCriticalPath(trace.spans) : null),
+    [highlightCriticalPath, trace.spans]
+  );
 
   return (
     <div className="rounded-lg border border-[#1E1E1E] bg-[#111] overflow-hidden">
@@ -61,25 +102,29 @@ export function FlameGraph({ trace, onSpanClick, selectedSpan }: FlameGraphProps
           const color = SERVICE_COLORS[span.service] || "#888";
           const isSelected = selectedSpan === span.id;
           const isError = span.status === "error";
+          const isCritical = criticalPath ? criticalPath.has(span.id) : true;
 
           return (
             <div key={span.id} className="flex items-center gap-3">
-              <div className="w-[120px] flex-shrink-0 text-[10px] text-[#444] font-mono truncate">
+              <div
+                className="w-[120px] flex-shrink-0 text-[10px] font-mono truncate transition-colors"
+                style={{ color: isCritical ? "#888" : "#333" }}
+              >
                 {span.service}
               </div>
               <div className="flex-1 h-6 relative bg-[#0A0A0A] rounded">
                 <button
                   onClick={() => onSpanClick(span)}
                   className={cn(
-                    "absolute top-0 h-6 rounded flex items-center px-1.5 transition-opacity cursor-pointer",
-                    isSelected ? "opacity-100 ring-1 ring-white/20" : "opacity-80 hover:opacity-100"
+                    "absolute top-0 h-6 rounded flex items-center px-1.5 transition-all cursor-pointer",
+                    isSelected ? "ring-1 ring-white/20" : "hover:brightness-110"
                   )}
                   style={{
                     left: `${left}%`,
                     width: `${width}%`,
                     minWidth: "3px",
                     backgroundColor: isError ? "#EF4444" : color,
-                    opacity: isError ? 1 : undefined,
+                    opacity: isCritical ? (isSelected ? 1 : 0.85) : 0.2,
                   }}
                 >
                   {width > 8 && (
