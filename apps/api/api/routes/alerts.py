@@ -5,7 +5,7 @@ All routes require x-api-key auth via authenticate_project dependency.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException

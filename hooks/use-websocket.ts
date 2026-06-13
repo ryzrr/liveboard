@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getSocket, disconnectSocket, type MetricUpdate } from "@/lib/socket";
+import { getSocket, type MetricUpdate } from "@/lib/socket";
 import type { StatCard } from "@/lib/types";
 
 const SPARKLINE_LENGTH = 20;
