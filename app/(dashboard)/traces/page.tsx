@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, GitBranch, Map } from "lucide-react";
 import { Topbar } from "@/components/layout/topbar";
 import { FlameGraph } from "@/components/traces/flame-graph";
@@ -8,7 +8,7 @@ import { SpanDetail } from "@/components/traces/span-detail";
 import { ServiceMap } from "@/components/traces/service-map";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatMs, timeAgo } from "@/lib/utils";
-import { getTraces } from "@/lib/mock-data";
+import { useTraces } from "@/hooks/use-data";
 import type { Trace, TraceSpan } from "@/lib/types";
 
 type DurationFilter = "any" | "<100" | "100-500" | "500-1000" | ">1000";
@@ -34,8 +34,14 @@ function matchesDuration(ms: number, filter: DurationFilter): boolean {
 type ViewMode = "flamegraph" | "servicemap";
 
 export default function TracesPage() {
-  const traces = useMemo(() => getTraces(), []);
-  const [selectedTrace, setSelectedTrace] = useState<Trace>(traces[0]);
+  const { data: traces } = useTraces();
+  const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
+
+  // Auto-select first trace when data first arrives
+  useEffect(() => {
+    if (traces.length > 0 && !selectedTrace) setSelectedTrace(traces[0]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [traces]);
   const [selectedSpan, setSelectedSpan] = useState<TraceSpan | null>(null);
   const [search, setSearch] = useState("");
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("any");

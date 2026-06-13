@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ArrowRight, Send, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Topbar } from "@/components/layout/topbar";
 import { RuleList } from "@/components/alerts/rule-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getAlertRules } from "@/lib/mock-data";
+import { useAlertRules, useAlertHistory } from "@/hooks/use-data";
+import type { CreateAlertRulePayload } from "@/hooks/use-data";
 import { timeAgo } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,11 +35,6 @@ const INITIAL_CHANNELS: Channel[] = [
   { id: "ch4", type: "webhook", name: "Custom Webhook", status: "disconnected", icon: "🔗" },
 ];
 
-const HISTORY = [
-  { rule: "p99 Latency Spike", time: new Date(Date.now() - 1800000), resolved: true, duration: "8 min", channel: "Slack #alerts" },
-  { rule: "Auth 4xx Spike", time: new Date(Date.now() - 5400000), resolved: false, duration: "ongoing", channel: "PagerDuty" },
-  { rule: "High Error Rate", time: new Date(Date.now() - 86400000), resolved: true, duration: "3 min", channel: "Slack #alerts" },
-];
 
 const SEVERITIES = [
   { value: "critical", label: "Critical", color: "#EF4444" },
@@ -135,11 +131,32 @@ function ChannelConfigForm({ channel, onSave, onClose }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const METRIC_TO_KEY: Record<string, string> = {
+  "Error Rate": "error_rate",
+  "p99 Latency": "p99_latency",
+  "Requests/min": "requests_per_min",
+  "Apdex Score": "apdex_score",
+};
+
+const OPERATOR_TO_SYM: Record<string, ">" | "<" | "=" | "!="> = {
+  exceeds: ">",
+  "drops below": "<",
+  equals: "=",
+};
+
 export default function AlertsPage() {
-  const rules = useMemo(() => getAlertRules(), []);
+  const { data: fetchedRules, createRule, toggleRule } = useAlertRules();
+  const { data: historyEntries } = useAlertHistory();
+
+  // Local rules state — seeded from API, updated optimistically on create
+  const [localRules, setLocalRules] = useState(fetchedRules);
+  // Sync when real data arrives (replaces mock fallback)
+  useEffect(() => { setLocalRules(fetchedRules); }, [fetchedRules]);
+
   const [activeTab, setActiveTab] = useState<"rules" | "channels" | "history">("rules");
   const [channels, setChannels] = useState<Channel[]>(INITIAL_CHANNELS);
   const [configuringId, setConfiguringId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   // Rule builder state
   const [metric, setMetric] = useState("Error Rate");
@@ -149,10 +166,55 @@ export default function AlertsPage() {
   const [severity, setSeverity] = useState<Severity>("warning");
   const [channel, setChannel] = useState("ch1");
 
-  const firing = rules.filter((r) => r.status === "firing").length;
+  const firing = localRules.filter((r) => r.status === "firing").length;
+  const triggeredToday = historyEntries.filter((h) => {
+    const d = h.firedAt;
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate();
+  }).length;
   const selectedChannel = channels.find((c) => c.id === channel);
 
   const preview = `Alert when ${metric} ${operator} ${threshold}${metric === "Error Rate" ? "%" : "ms"} for ${window} min → ${selectedChannel?.name ?? "—"} [${severity}]`;
+
+  async function handleCreateRule() {
+    const payload: CreateAlertRulePayload = {
+      name: `${metric} ${operator} ${threshold}`,
+      metric: METRIC_TO_KEY[metric] ?? metric.toLowerCase().replace(/\s+/g, "_"),
+      operator: OPERATOR_TO_SYM[operator] ?? ">",
+      threshold: parseFloat(threshold) || 0,
+      window: parseInt(window, 10) || 5,
+      severity,
+      channel: selectedChannel?.name ?? "",
+    };
+    setCreating(true);
+    try {
+      const newRule = await createRule(payload);
+      setLocalRules((prev) => [...prev, newRule]);
+    } catch {
+      // API unavailable — add optimistic entry so UI reflects intent
+      setLocalRules((prev) => [
+        ...prev,
+        {
+          id: `rule_local_${Date.now()}`,
+          ...payload,
+          status: "ok" as const,
+          enabled: true,
+        },
+      ]);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleToggle(id: string, enabled: boolean) {
+    try {
+      await toggleRule(id, enabled);
+    } catch {
+      // Optimistic update already applied in RuleList; silently ignore API errors
+    }
+  }
 
   function handleSaveChannel(updated: Channel) {
     setChannels((prev) => prev.map((c) => c.id === updated.id ? updated : c));
@@ -174,9 +236,9 @@ export default function AlertsPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Active Rules", value: rules.filter((r) => r.enabled).length, color: "#F5F5F5" },
+            { label: "Active Rules", value: localRules.filter((r) => r.enabled).length, color: "#F5F5F5" },
             { label: "Firing Now", value: firing, color: firing > 0 ? "#EF4444" : "#22C55E" },
-            { label: "Triggered Today", value: 4, color: "#F59E0B" },
+            { label: "Triggered Today", value: triggeredToday, color: "#F59E0B" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-lg border border-[#1E1E1E] bg-[#111] p-4">
               <p className="text-[10px] text-[#444] uppercase tracking-wider mb-1">{stat.label}</p>
@@ -205,7 +267,7 @@ export default function AlertsPage() {
         {/* ── Rules tab ── */}
         {activeTab === "rules" && (
           <>
-            <RuleList rules={rules} />
+            <RuleList rules={localRules} onToggle={handleToggle} />
 
             {/* Enhanced rule builder */}
             <div className="rounded-lg border border-dashed border-[#2A2A2A] bg-[#0D0D0D] p-4 space-y-3">
@@ -281,9 +343,9 @@ export default function AlertsPage() {
                   ))}
                 </select>
 
-                <Button variant="primary" size="sm" className="ml-auto">
-                  <Plus className="h-3 w-3" />
-                  Create Rule
+                <Button variant="primary" size="sm" className="ml-auto" onClick={handleCreateRule} disabled={creating}>
+                  {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                  {creating ? "Creating…" : "Create Rule"}
                 </Button>
               </div>
 
@@ -346,13 +408,16 @@ export default function AlertsPage() {
         {/* ── History tab ── */}
         {activeTab === "history" && (
           <div className="rounded-lg border border-[#1E1E1E] bg-[#111] divide-y divide-[#161616]">
-            {HISTORY.map((h, i) => (
-              <div key={i} className="flex items-center gap-4 px-4 py-3 hover:bg-[#151515] transition-colors cursor-pointer">
+            {historyEntries.length === 0 && (
+              <p className="text-xs text-[#444] px-4 py-6 text-center">No alert history yet.</p>
+            )}
+            {historyEntries.map((h) => (
+              <div key={h.id} className="flex items-center gap-4 px-4 py-3 hover:bg-[#151515] transition-colors cursor-pointer">
                 <div className={`h-2 w-2 rounded-full flex-shrink-0 ${h.resolved ? "bg-green" : "bg-red animate-pulse"}`} />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-[#F5F5F5]">{h.rule}</p>
+                  <p className="text-xs font-medium text-[#F5F5F5]">{h.ruleName}</p>
                   <p className="text-[10px] text-[#444] mt-0.5">
-                    {timeAgo(h.time)} · {h.duration} · via {h.channel}
+                    {timeAgo(h.firedAt)} · {h.duration} · via {h.channel}
                   </p>
                 </div>
                 <Badge variant={h.resolved ? "green" : "red"} size="sm">

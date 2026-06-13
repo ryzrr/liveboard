@@ -8,7 +8,7 @@ from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import ingest, projects
+from api.routes import alerts, ingest, projects, query
 from core.database import close_pool, get_pool
 from core.redis_client import close_redis
 from realtime.pubsub import listen_pubsub
@@ -65,6 +65,8 @@ _fastapi.add_middleware(
 
 _fastapi.include_router(ingest.router)
 _fastapi.include_router(projects.router)
+_fastapi.include_router(query.router)
+_fastapi.include_router(alerts.router)
 _fastapi.include_router(sse_router)
 
 

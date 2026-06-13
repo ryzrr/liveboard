@@ -8,6 +8,7 @@ import type { AlertRule } from "@/lib/types";
 
 interface RuleListProps {
   rules: AlertRule[];
+  onToggle?: (id: string, enabled: boolean) => void;
 }
 
 const METRIC_LABELS: Record<string, string> = {
@@ -31,13 +32,15 @@ const SEVERITY_ICONS = {
   info: Info,
 };
 
-export function RuleList({ rules }: RuleListProps) {
+export function RuleList({ rules, onToggle }: RuleListProps) {
   const [localRules, setLocalRules] = useState(rules);
 
   const toggle = (id: string) => {
-    setLocalRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
-    );
+    const rule = localRules.find((r) => r.id === id);
+    if (!rule) return;
+    const newEnabled = !rule.enabled;
+    setLocalRules((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: newEnabled } : r)));
+    onToggle?.(id, newEnabled);
   };
 
   return (
