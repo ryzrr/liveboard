@@ -10,10 +10,11 @@ import {
   Globe,
   Settings,
   Activity,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LiveboardIcon } from "@/components/logo";
+import { ProjectSwitcher } from "@/components/projects/project-switcher";
+import { UserMenu } from "@/components/auth/user-menu";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
@@ -39,15 +40,7 @@ export function Sidebar() {
 
       {/* Project Selector */}
       <div className="px-3 py-3 border-b border-[#1E1E1E]">
-        <button className="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-[#161616] border border-[#222] hover:border-[#2A2A2A] transition-colors group">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-sm bg-blue/20 border border-blue/30 flex items-center justify-center">
-              <span className="text-[8px] text-blue font-bold">M</span>
-            </div>
-            <span className="text-xs text-[#F5F5F5] font-medium">My API</span>
-          </div>
-          <ChevronRight className="h-3 w-3 text-[#555] group-hover:text-[#888] transition-colors" />
-        </button>
+        <ProjectSwitcher />
       </div>
 
       {/* Nav */}
@@ -86,15 +79,7 @@ export function Sidebar() {
           <Settings className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">Settings</span>
         </Link>
-        <div className="flex items-center gap-2.5 px-2.5 py-1.5">
-          <div className="h-5 w-5 rounded-full bg-gradient-to-br from-blue to-blue-hover flex items-center justify-center flex-shrink-0">
-            <span className="text-[9px] font-bold text-white">N</span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-[#F5F5F5] truncate">Nikhil</p>
-            <p className="text-[10px] text-[#555] truncate">Pro Plan</p>
-          </div>
-        </div>
+        <UserMenu />
       </div>
     </aside>
   );

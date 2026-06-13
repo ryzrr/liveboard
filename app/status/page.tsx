@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, Mail, ChevronDown } from "lucide-react";
 import { LiveboardIcon } from "@/components/logo";
 import { UptimeBar } from "@/components/status/uptime-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getServiceStatuses, getIncidents } from "@/lib/mock-data";
+import { useIncidents, useServices } from "@/hooks/use-data";
 import { timeAgo } from "@/lib/utils";
 import type { Incident } from "@/lib/types";
 
@@ -152,8 +152,8 @@ function IncidentCard({ incident }: { incident: Incident }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StatusPage() {
-  const services = useMemo(() => getServiceStatuses(), []);
-  const incidents = useMemo(() => getIncidents(), []);
+  const { data: services } = useServices();
+  const { data: incidents } = useIncidents();
   const [email, setEmail] = useState("");
 
   const hasDegraded = services.some((s) => s.currentStatus !== "operational");

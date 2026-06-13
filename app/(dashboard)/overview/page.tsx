@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { TimeRangePicker } from "@/components/layout/time-range-picker";
 import { StatCardComponent } from "@/components/dashboard/stat-card";
@@ -11,14 +10,18 @@ import { IncidentPanel } from "@/components/dashboard/incident-panel";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeRange } from "@/hooks/use-time-range";
 import { useMetrics } from "@/hooks/use-websocket";
-import { generateChartData, getIncidents } from "@/lib/mock-data";
+import { useChartData, useIncidents } from "@/hooks/use-data";
+import { useProjects } from "@/components/providers/project-provider";
 
 const SPARK_COLORS = ["#378ADD", "#EF4444", "#F59E0B", "#22C55E"];
 
 export default function OverviewPage() {
   const { range, setRange, hours } = useTimeRange("24h");
-  const chartData = useMemo(() => generateChartData(hours), [hours]);
-  const incidents = useMemo(() => getIncidents(), []);
+  const { activeProject } = useProjects();
+
+  // REST: chart timeseries + incidents (real data; mock while loading / API down)
+  const { data: chartData } = useChartData(hours);
+  const { data: incidents } = useIncidents();
 
   // Live stat cards via Socket.io — falls back to placeholder values while connecting
   const apiKey = process.env.NEXT_PUBLIC_LIVEBOARD_API_KEY ?? null;
@@ -27,7 +30,7 @@ export default function OverviewPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Topbar
-        breadcrumb={[{ label: "Projects" }, { label: "My API" }, { label: "Overview" }]}
+        breadcrumb={[{ label: "Projects" }, { label: activeProject?.name ?? "—" }, { label: "Overview" }]}
         actions={<TimeRangePicker value={range} onChange={setRange} />}
       />
 

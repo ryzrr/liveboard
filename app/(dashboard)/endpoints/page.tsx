@@ -10,7 +10,7 @@ import { EndpointComparison } from "@/components/endpoints/endpoint-comparison";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTimeRange } from "@/hooks/use-time-range";
-import { getEndpoints } from "@/lib/mock-data";
+import { useEndpoints } from "@/hooks/use-data";
 import type { Endpoint } from "@/lib/types";
 
 const METHODS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"] as const;
@@ -33,7 +33,7 @@ export default function EndpointsPage() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelection, setCompareSelection] = useState<Endpoint[]>([]);
 
-  const endpoints = useMemo(() => getEndpoints(), []);
+  const { data: endpoints } = useEndpoints(range === "7d" ? 168 : range === "24h" ? 24 : range === "6h" ? 6 : 1);
 
   const filtered = useMemo(() => {
     return endpoints.filter((ep) => {
@@ -74,7 +74,7 @@ export default function EndpointsPage() {
   function toggleStatusFilter(label: string) {
     setStatusFilter((prev) => {
       const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
+      if (next.has(label)) { next.delete(label); } else { next.add(label); }
       return next;
     });
   }
