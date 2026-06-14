@@ -32,7 +32,9 @@ export function createExpressMiddleware(config: LiveBoardConfig): Middleware {
     next: NextFunction
   ): void {
     const startMs = Date.now();
-    const traceId = randomUUID();
+    // Propagate incoming trace ID from upstream service, or start a new trace
+    const incoming = req.headers["x-trace-id"];
+    const traceId = (typeof incoming === "string" && incoming) ? incoming : randomUUID();
 
     res.setHeader("x-trace-id", traceId);
 

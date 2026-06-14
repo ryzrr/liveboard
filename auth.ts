@@ -41,6 +41,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
 
   callbacks: {
+    async signIn({ user }) {
+      const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
+      const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN?.trim();
+
+      // No restrictions configured — allow all (open instance)
+      if (allowedEmails.length === 0 && !allowedDomain) return true;
+
+      const email = user.email ?? "";
+      if (allowedEmails.length > 0 && allowedEmails.includes(email)) return true;
+      if (allowedDomain && email.endsWith(`@${allowedDomain}`)) return true;
+
+      return false;
+    },
+
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;

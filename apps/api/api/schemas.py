@@ -114,6 +114,35 @@ class ServiceStatusOut(BaseModel):
     uptime_bars: list[str]
 
 
+# ─── Span ingest ─────────────────────────────────────────────────────────────
+
+class SpanIn(BaseModel):
+    span_id: str
+    trace_id: str
+    parent_id: Optional[str] = None
+    service_name: str = Field(default="unknown", max_length=100)
+    operation: str = Field(..., min_length=1, max_length=200)
+    start_time: datetime
+    duration_ms: int = Field(..., ge=0)
+    status_code: int = Field(default=200, ge=100, le=599)
+    tags: dict = Field(default_factory=dict)
+
+    @field_validator("start_time", mode="before")
+    @classmethod
+    def ensure_utc(cls, v: datetime) -> datetime:
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+
+class SpanBatchRequest(BaseModel):
+    spans: list[SpanIn] = Field(..., min_length=1, max_length=500)
+
+
+class SpanBatchResponse(BaseModel):
+    accepted: int
+
+
 # ─── Alert rules ─────────────────────────────────────────────────────────────
 
 class AlertRuleOut(BaseModel):

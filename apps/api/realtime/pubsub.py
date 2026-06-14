@@ -15,7 +15,7 @@ import logging
 import redis.asyncio as aioredis
 
 from core.config import settings
-from .socket_server import emit_metric
+from .socket_server import emit_incident, emit_metric
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 async def listen_pubsub() -> None:
     client = aioredis.from_url(settings.redis_url.get_secret_value())
     pubsub = client.pubsub()
-    await pubsub.psubscribe("metrics:*")
-    logger.info("Pub/sub listener ready — watching metrics:*")
+    await pubsub.psubscribe("metrics:*", "incidents:*")
+    logger.info("Pub/sub listener ready — watching metrics:* incidents:*")
 
     try:
         async for message in pubsub.listen():
@@ -36,9 +36,12 @@ async def listen_pubsub() -> None:
                     if isinstance(message["channel"], bytes)
                     else message["channel"]
                 )
-                project_id = channel.split(":", 1)[1]
+                prefix, project_id = channel.split(":", 1)
                 payload = json.loads(message["data"])
-                await emit_metric(project_id, payload)
+                if prefix == "metrics":
+                    await emit_metric(project_id, payload)
+                elif prefix == "incidents":
+                    await emit_incident(project_id, payload)
             except Exception as exc:
                 logger.debug("Pub/sub message error: %s", exc)
     except asyncio.CancelledError:

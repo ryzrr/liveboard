@@ -6,6 +6,7 @@ export interface MetricUpdate {
   requests: number;
   errorRate: number;  // 0–100
   p99: number;        // milliseconds
+  avg: number;        // milliseconds
   bucket: string | null;
 }
 
