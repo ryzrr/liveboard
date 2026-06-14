@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 
 /**
@@ -8,15 +8,18 @@ import { apiFetch } from "@/lib/api-client";
  * - Shows `fallback` (mock) while loading or on error.
  * - Swaps to real data once the fetch succeeds.
  * - Refetches whenever `path` or serialised `params` change.
+ * - Polls every `pollMs` milliseconds if provided.
  */
 export function useApiQuery<T>(
   path: string,
   params: Record<string, string>,
   fallback: T,
   transform?: (raw: unknown) => T,
-): { data: T; loading: boolean } {
+  pollMs?: number,
+): { data: T; loading: boolean; refetch: () => void } {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
 
   // Stable string key — avoids object-reference churn in the dependency array
   const paramKey = Object.entries(params)
@@ -24,9 +27,16 @@ export function useApiQuery<T>(
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
 
+  const refetch = () => setTick((t) => t + 1);
+
+  // Main fetch — runs on mount, param change, or manual refetch tick
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    // Only clear data (show fallback) when params actually changed, not on poll ticks
+    if (tick === 0) {
+      setData(null);
+      setLoading(true);
+    }
 
     apiFetch<unknown>(path, params)
       .then((raw) => {
@@ -36,14 +46,31 @@ export function useApiQuery<T>(
       })
       .catch(() => {
         if (!active) return;
-        setLoading(false); // keep `data` as-is → fallback is served
+        setLoading(false);
       });
 
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, paramKey]);
+  }, [path, paramKey, tick]);
 
-  return { data: data ?? fallback, loading };
+  // Reset tick (and clear stale data) whenever the query params change
+  const prevParamKey = useRef(paramKey);
+  useEffect(() => {
+    if (prevParamKey.current !== paramKey) {
+      prevParamKey.current = paramKey;
+      setData(null);
+      setTick(0);
+    }
+  }, [paramKey]);
+
+  // Polling interval
+  useEffect(() => {
+    if (!pollMs) return;
+    const id = setInterval(() => setTick((t) => t + 1), pollMs);
+    return () => clearInterval(id);
+  }, [pollMs]);
+
+  return { data: data ?? fallback, loading, refetch };
 }

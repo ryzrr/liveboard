@@ -45,7 +45,9 @@ export function createFastifyPlugin(config: LiveBoardConfig) {
   ): Promise<void> {
     fastify.addHook("onRequest", (request: any, reply: any, done: () => void) => {
       request[kStart] = Date.now();
-      request[kTraceId] = randomUUID();
+      // Propagate incoming trace ID from upstream service, or start a new trace
+      const incoming = request.headers["x-trace-id"];
+      request[kTraceId] = (typeof incoming === "string" && incoming) ? incoming : randomUUID();
       reply.header("x-trace-id", request[kTraceId]);
       done();
     });

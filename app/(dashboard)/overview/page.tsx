@@ -9,7 +9,7 @@ import { LiveLogTable } from "@/components/dashboard/live-log-table";
 import { IncidentPanel } from "@/components/dashboard/incident-panel";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeRange } from "@/hooks/use-time-range";
-import { useMetrics } from "@/hooks/use-websocket";
+import { useMetrics, useIncidentSocket } from "@/hooks/use-websocket";
 import { useChartData, useIncidents } from "@/hooks/use-data";
 import { useProjects } from "@/components/providers/project-provider";
 
@@ -23,9 +23,10 @@ export default function OverviewPage() {
   const { data: chartData } = useChartData(hours);
   const { data: incidents } = useIncidents();
 
-  // Live stat cards via Socket.io — falls back to placeholder values while connecting
+  // Live stat cards + incidents via Socket.io — falls back to placeholders while connecting
   const apiKey = process.env.NEXT_PUBLIC_LIVEBOARD_API_KEY ?? null;
   const cards = useMetrics(apiKey);
+  const liveIncidents = useIncidentSocket(apiKey);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -79,7 +80,11 @@ export default function OverviewPage() {
 
         {/* Incident sidebar */}
         <div className="w-[300px] flex-shrink-0 p-5 pl-0">
-          <IncidentPanel incidents={incidents} />
+          <IncidentPanel incidents={[
+          // Live socket-pushed incidents take priority, then REST-fetched list (deduped)
+          ...liveIncidents,
+          ...incidents.filter((i) => !liveIncidents.some((l) => l.id === i.id)),
+        ]} />
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import logging
 import signal
 
 from worker.aggregator import run as run_aggregator
+from worker.anomaly import run as run_anomaly
 from worker.metrics import run as run_metrics
 
 logging.basicConfig(
@@ -25,19 +26,21 @@ logger = logging.getLogger(__name__)
 
 async def main() -> None:
     loop = asyncio.get_running_loop()
-    agg_task = asyncio.create_task(run_aggregator(), name="aggregator")
-    metrics_task = asyncio.create_task(run_metrics(), name="metrics-publisher")
+    agg_task     = asyncio.create_task(run_aggregator(), name="aggregator")
+    metrics_task = asyncio.create_task(run_metrics(),    name="metrics-publisher")
+    anomaly_task = asyncio.create_task(run_anomaly(),    name="anomaly-detector")
 
     def _shutdown(sig: signal.Signals) -> None:
         logger.info("Received %s, stopping worker", sig.name)
         agg_task.cancel()
         metrics_task.cancel()
+        anomaly_task.cancel()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, _shutdown, sig)
 
     try:
-        await asyncio.gather(agg_task, metrics_task, return_exceptions=True)
+        await asyncio.gather(agg_task, metrics_task, anomaly_task, return_exceptions=True)
     except asyncio.CancelledError:
         pass
 

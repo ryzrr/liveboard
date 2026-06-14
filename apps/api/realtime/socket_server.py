@@ -61,5 +61,10 @@ async def disconnect(sid: str) -> None:
 
 
 async def emit_metric(project_id: str, payload: dict) -> None:
-    """Called by the pub/sub listener to push a metric update to all clients in the room."""
+    """Push a live metric update to all clients in the project room."""
     await sio.emit("metric", payload, room=f"project:{project_id}")
+
+
+async def emit_incident(project_id: str, payload: dict) -> None:
+    """Push a new incident to all clients in the project room."""
+    await sio.emit("incident", payload, room=f"project:{project_id}")

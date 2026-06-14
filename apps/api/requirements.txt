@@ -16,10 +16,7 @@ redis==5.1.1
 python-socketio[asyncio_client]==5.11.4
 
 # AI (Phase 5)
-anthropic==0.34.2
-
-# Alert workers (Phase 4)
-celery==5.4.0
+cerebras-cloud-sdk==1.19.0
 
 # Auth
 python-jose[cryptography]==3.3.0

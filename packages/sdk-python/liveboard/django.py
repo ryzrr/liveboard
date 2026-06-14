@@ -79,7 +79,9 @@ class LiveBoardMiddleware:
             return self._get_response(request)
 
         start_ns = time.perf_counter_ns()
-        trace_id = str(uuid.uuid4())
+        # Propagate incoming trace ID from upstream service, or start a new trace
+        # Django exposes headers as HTTP_X_TRACE_ID in request.META
+        trace_id = request.META.get("HTTP_X_TRACE_ID") or str(uuid.uuid4())
 
         response = self._get_response(request)
 

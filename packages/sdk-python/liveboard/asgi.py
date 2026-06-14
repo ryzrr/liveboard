@@ -64,7 +64,9 @@ class LiveBoardMiddleware:
             return
 
         start_ns = time.perf_counter_ns()
-        trace_id = str(uuid.uuid4())
+        # Propagate incoming trace ID from upstream service, or start a new trace
+        incoming_headers = {k.decode(): v.decode() for k, v in scope.get("headers", [])}
+        trace_id = incoming_headers.get("x-trace-id") or str(uuid.uuid4())
         status_holder: list[int] = [200]
 
         async def send_wrapper(message: dict[str, Any]) -> None:

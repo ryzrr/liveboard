@@ -62,7 +62,9 @@ def init_liveboard(app: Any, *, api_key: str, **kwargs: Any) -> None:
         )
         if not g._lb_skip:
             g._lb_start_ns = time.perf_counter_ns()
-            g._lb_trace_id = str(uuid.uuid4())
+            _, req = _get_flask_globals()
+            # Propagate incoming trace ID from upstream service, or start a new trace
+            g._lb_trace_id = req.headers.get("X-Trace-Id") or str(uuid.uuid4())
 
     @app.after_request
     def _after(response: Any) -> Any:

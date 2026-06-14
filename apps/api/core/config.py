@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     api_secret_key: SecretStr
     ingest_api_port: int = 8000
 
-    # ── AI ────────────────────────────────────────────────────────────────────
-    anthropic_api_key: SecretStr = SecretStr("")
+    # ── AI (Phase 5 — Cerebras) ───────────────────────────────────────────────
+    cerebras_api_key: SecretStr = SecretStr("")
 
     # ── Environment ───────────────────────────────────────────────────────────
     environment: str = "development"

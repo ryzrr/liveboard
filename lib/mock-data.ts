@@ -67,8 +67,12 @@ export function generateChartData(hours: number): ChartData[] {
     const requests = Math.max(0, base + randomBetween(-200, 200));
     const errorRate = Math.random() * 0.04;
 
+    const timeLabel = hours > 24
+      ? t.toLocaleDateString([], { month: "short", day: "numeric" })
+      : t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
     return {
-      time: t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      time: timeLabel,
       requests: Math.floor(requests),
       errors2xx: Math.floor(requests * (1 - errorRate) * 0.95),
       errors4xx: Math.floor(requests * errorRate * 0.7),

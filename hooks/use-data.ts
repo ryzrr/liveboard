@@ -153,20 +153,22 @@ function toServices(raw: unknown): ServiceStatus[] {
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
-/** Request-volume and status-code breakdown for the overview charts. */
+/** Request-volume and status-code breakdown for the overview charts. Polls every 30 s. */
 export function useChartData(hours: number) {
   const fallback = useMemo(() => generateChartData(hours), [hours]);
   return useApiQuery<ChartData[]>(
     "/v1/metrics/timeseries",
     { hours: String(hours) },
     fallback,
+    undefined,
+    30_000,
   );
 }
 
-/** AI-detected incidents — used by overview sidebar and status page. */
+/** AI-detected incidents — polls every 60 s (matches anomaly worker cadence). */
 export function useIncidents() {
   const fallback = useMemo(() => getIncidents(), []);
-  return useApiQuery<Incident[]>("/v1/incidents", {}, fallback, toIncidents);
+  return useApiQuery<Incident[]>("/v1/incidents", {}, fallback, toIncidents, 60_000);
 }
 
 /** Per-route aggregate stats for the endpoints explorer. */

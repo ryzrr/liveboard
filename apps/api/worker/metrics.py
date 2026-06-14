@@ -54,7 +54,8 @@ async def _fetch_metrics(conn: asyncpg.Connection, project_id: str) -> Optional[
             )                                                                 AS error_rate,
             COALESCE(
                 PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms), 0
-            )                                                                 AS p99
+            )                                                                 AS p99,
+            COALESCE(AVG(duration_ms), 0)                                    AS avg_ms
         FROM events
         WHERE project_id = $1::uuid
           AND time > NOW() - INTERVAL '1 minute'
@@ -67,6 +68,7 @@ async def _fetch_metrics(conn: asyncpg.Connection, project_id: str) -> Optional[
         "requests": int(row["total_requests"]),
         "errorRate": float(row["error_rate"] or 0),
         "p99": round(float(row["p99"]), 1),
+        "avg": round(float(row["avg_ms"]), 1),
         "bucket": None,
     }
 
