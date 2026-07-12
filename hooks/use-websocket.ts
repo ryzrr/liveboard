@@ -22,6 +22,7 @@ function mockMetric(): MetricUpdate {
     errorRate: Math.round((0.3 + Math.random() * 1.7) * 10) / 10,
     p99:       Math.round(250 + Math.random() * 95),
     avg:       Math.round(90 + Math.random() * 55),
+    bucket:    new Date().toISOString(),
   };
 }
 
