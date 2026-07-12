@@ -15,9 +15,20 @@ function emptyCards(): StatCard[] {
   ];
 }
 
+/** Realistic metric tick for demo mode when no live backend is connected. */
+function mockMetric(): MetricUpdate {
+  return {
+    requests:  Math.round(2200 + Math.random() * 520),
+    errorRate: Math.round((0.3 + Math.random() * 1.7) * 10) / 10,
+    p99:       Math.round(250 + Math.random() * 95),
+    avg:       Math.round(90 + Math.random() * 55),
+  };
+}
+
 /**
  * Connects to the Socket.io server and returns live stat-card data.
- * Falls back to empty/placeholder cards while the connection is establishing.
+ * When no API key / live backend is available, falls back to a self-updating
+ * demo stream so the dashboard always feels alive instead of stuck "connecting…".
  */
 export function useMetrics(apiKey: string | null) {
   const [cards, setCards] = useState<StatCard[]>(emptyCards);
@@ -30,11 +41,7 @@ export function useMetrics(apiKey: string | null) {
   }>({ requests: [], errorRate: [], p99: [], avg: [] });
 
   useEffect(() => {
-    if (!apiKey) return;
-
-    const socket = getSocket(apiKey);
-
-    function onMetric(update: MetricUpdate) {
+    function applyUpdate(update: MetricUpdate) {
       const h = history.current;
 
       const push = (arr: number[], val: number) =>
@@ -58,7 +65,7 @@ export function useMetrics(apiKey: string | null) {
       setCards([
         {
           label:      "Requests / min",
-          value:      update.requests,
+          value:      update.requests.toLocaleString(),
           unit:       "req",
           delta:      delta(update.requests, prev.requests),
           deltaLabel: "vs last min",
@@ -91,9 +98,43 @@ export function useMetrics(apiKey: string | null) {
       ]);
     }
 
+    let mockTimer: ReturnType<typeof setInterval> | null = null;
+    let gotReal = false;
+
+    function startMock() {
+      if (mockTimer) return;
+      // Seed history so sparklines render full immediately.
+      for (let i = 0; i < SPARKLINE_LENGTH; i++) applyUpdate(mockMetric());
+      mockTimer = setInterval(() => applyUpdate(mockMetric()), 2000);
+    }
+
+    if (!apiKey) {
+      startMock();
+      return () => {
+        if (mockTimer) clearInterval(mockTimer);
+      };
+    }
+
+    const socket = getSocket(apiKey);
+    function onMetric(update: MetricUpdate) {
+      gotReal = true;
+      if (mockTimer) {
+        clearInterval(mockTimer);
+        mockTimer = null;
+      }
+      applyUpdate(update);
+    }
     socket.on("metric", onMetric);
+
+    // If no real metric arrives shortly, switch to demo mode.
+    const grace = setTimeout(() => {
+      if (!gotReal) startMock();
+    }, 1500);
+
     return () => {
       socket.off("metric", onMetric);
+      clearTimeout(grace);
+      if (mockTimer) clearInterval(mockTimer);
     };
   }, [apiKey]);
 

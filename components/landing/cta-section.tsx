@@ -6,16 +6,18 @@ import { Reveal } from "@/components/landing/reveal";
 
 export function CtaSection() {
   return (
-    <section className="relative overflow-hidden border-t border-[#1E1E1E]">
-      <div
-        className="animate-drift pointer-events-none absolute -bottom-32 left-1/2 -z-10 h-[420px] w-[700px] rounded-full opacity-[0.13] blur-[110px]"
-        style={{ background: "conic-gradient(from 90deg, #06B6D4, #F59E0B, #F43F5E, #3B82F6, #A855F7, #06B6D4)", animationDirection: "reverse" }}
-      />
+    <section className="relative overflow-hidden border-t border-white/[0.06]">
+      {/* subtle monochrome focus + faint radar echo */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute inset-0 rounded-full border border-white/[0.05]" />
+        <div className="absolute inset-[22%] rounded-full border border-white/[0.05]" />
+        <div className="absolute inset-[44%] rounded-full border border-white/[0.06]" />
+      </div>
       <Reveal className="mx-auto max-w-3xl px-6 py-28 text-center">
-        <h2 className="text-3xl font-display font-bold tracking-tight text-[#F5F5F5] sm:text-4xl">
-          Ship with confidence.
+        <h2 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
+          <span className="gradient-text">Ship with confidence.</span>
         </h2>
-        <p className="mt-4 text-[15px] leading-relaxed text-[#888]">
+        <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-[#8a8a94]">
           Open source, self-hostable, and free to start. Find out about the incident
           before your customers do.
         </p>

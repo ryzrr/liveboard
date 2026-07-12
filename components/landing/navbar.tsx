@@ -1,78 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Menu, User, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { LiveboardIcon } from "@/components/logo";
 import { GithubIcon } from "@/components/landing/github-icon";
 
 const LINKS = [
+  { label: "Tracing", href: "#tracing" },
+  { label: "Endpoints", href: "#endpoints" },
+  { label: "Alerts", href: "#alerts" },
   { label: "Features", href: "#features" },
-  { label: "Insights", href: "#insights" },
-  { label: "How it works", href: "#how-it-works" },
+  { label: "Setup", href: "#how-it-works" },
 ];
 
 const GITHUB_URL = "https://github.com/ryzrr/liveboard";
 
 export function LandingNavbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="relative z-50 px-5 pt-5 sm:px-7">
-      <nav className="flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 transition-transform hover:scale-[1.04]">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#161616] border border-[#262626]">
-            <LiveboardIcon size={17} />
-          </span>
-          <span className="font-display text-[15px] font-bold tracking-tight text-[#F5F5F5]">
+    <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:pt-4">
+      <nav
+        className={`flex w-full max-w-5xl items-center justify-between rounded-full px-2 py-2 pl-4 transition-all duration-300 ${
+          scrolled
+            ? "border border-white/10 bg-[#0A0A0B]/80 backdrop-blur-xl"
+            : "border border-transparent bg-transparent"
+        }`}
+      >
+        <Link href="/" className="flex items-center gap-2.5">
+          <LiveboardIcon size={20} />
+          <span className="font-display text-[15px] font-bold tracking-tight text-white">
             Liveboard
           </span>
         </Link>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <div className="flex items-center gap-1 rounded-full border border-[#1E1E1E] bg-[#121212] px-1.5 py-1.5">
-            {LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-full px-3.5 py-1.5 text-[13px] text-[#999] transition-colors hover:text-[#F5F5F5]"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-full px-3.5 py-1.5 text-[13px] text-[#9a9aa4] transition-colors hover:text-white"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
 
-          <a
-            href="/status"
-            className="flex items-center gap-1.5 rounded-full border border-[#1E1E1E] bg-[#121212] px-3.5 py-2 text-[13px] text-[#999] transition-colors hover:text-[#F5F5F5]"
-          >
-            Status
-            <ArrowUpRight className="h-3 w-3" />
-          </a>
+        <div className="hidden items-center gap-1.5 lg:flex">
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#1E1E1E] bg-[#121212] text-[#999] transition-colors hover:text-[#F5F5F5]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#9a9aa4] transition-colors hover:text-white"
             aria-label="View source on GitHub"
           >
             <GithubIcon className="h-4 w-4" />
           </a>
+          <Link
+            href="/status"
+            className="rounded-full px-3 py-1.5 text-[13px] text-[#9a9aa4] transition-colors hover:text-white"
+          >
+            Status
+          </Link>
+          <Link
+            href="/auth/signin"
+            className="group ml-1 flex items-center gap-1.5 rounded-full bg-white py-1.5 pl-4 pr-3.5 text-[13px] font-medium text-[#0A0A0A] transition-transform hover:scale-[1.03] active:scale-95"
+          >
+            Get started
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
-
-        <Link
-          href="/auth/signin"
-          className="hidden items-center gap-2 text-[13px] font-medium text-[#ddd] transition-colors hover:text-[#F5F5F5] lg:flex"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#262626] bg-[#161616]">
-            <User className="h-3.5 w-3.5" />
-          </span>
-          Get started
-        </Link>
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="p-2 text-[#888] lg:hidden"
+          className="p-2 text-[#9a9aa4] lg:hidden"
           aria-label="Toggle menu"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -80,30 +90,40 @@ export function LandingNavbar() {
       </nav>
 
       {open && (
-        <div className="mt-3 rounded-2xl border border-[#1E1E1E] bg-[#0D0D0D] px-5 py-4 lg:hidden">
-          <div className="flex flex-col gap-4">
+        <div className="absolute inset-x-3 top-[70px] rounded-2xl border border-white/10 bg-[#0A0A0B]/95 p-5 backdrop-blur-xl lg:hidden">
+          <div className="flex flex-col gap-1">
             {LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="text-sm text-[#888] hover:text-[#F5F5F5] transition-colors"
+                className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] transition-colors hover:bg-white/5 hover:text-white"
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/status" onClick={() => setOpen(false)} className="text-sm text-[#888] hover:text-[#F5F5F5] transition-colors">
+            <Link
+              href="/status"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] hover:bg-white/5 hover:text-white"
+            >
               Status page
             </Link>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="text-sm text-[#888] hover:text-[#F5F5F5] transition-colors">
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] hover:bg-white/5 hover:text-white"
+            >
               GitHub
             </a>
             <Link
               href="/auth/signin"
-              className="flex items-center justify-center gap-1.5 rounded-full bg-[#F5F5F5] py-2.5 text-[13px] font-medium text-[#0A0A0A]"
+              onClick={() => setOpen(false)}
+              className="mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13px] font-medium text-[#0A0A0A]"
             >
               Get started
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
