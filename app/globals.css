@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,7 +18,7 @@ html,
 body {
   background: #0A0A0A;
   color: #F5F5F5;
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -106,4 +104,106 @@ body {
 }
 .animate-marquee {
   animation: marquee 22s linear infinite;
+}
+
+/* ─── Linear/Vercel-grade surface system ───────────────────────────────────── */
+
+/* Faint architectural grid, fades out toward edges */
+.grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.grid-fade {
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+}
+
+/* Hairline surface — flat translucent fill + 1px border (no gradient). */
+.hairline {
+  background: rgba(255, 255, 255, 0.021);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.hairline-hover {
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.hairline-hover:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* Solid headline colors (no gradient) */
+.gradient-text { color: #f4f4f5; }
+.gradient-accent { color: #57a5f2; }
+
+/* Top-edge highlight line used on chrome / hero frame */
+.edge-light {
+  position: relative;
+}
+.edge-light::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+}
+
+/* Soft vertical rise-in used sparingly */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float-y { animation: float-y 6s ease-in-out infinite; }
+
+/* Live blink for status dots */
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.animate-live { animation: live-blink 1.6s ease-in-out infinite; }
+
+/* Scanning sweep for the hero chart line */
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.animate-sweep { animation: sweep 3.2s ease-in-out infinite; }
+
+/* Conic border spin (announcement pill) */
+@keyframes spin-slow {
+  to { transform: rotate(1turn); }
+}
+.animate-spin-slow { animation: spin-slow 6s linear infinite; }
+
+/* Radar — concentric "ping" rings expanding from the hero center */
+@keyframes radar-ping {
+  0%   { transform: scale(0.18); opacity: 0; }
+  12%  { opacity: 0.5; }
+  100% { transform: scale(1); opacity: 0; }
+}
+.radar-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  animation: radar-ping 6s cubic-bezier(0.16, 0.84, 0.44, 1) infinite;
+}
+/* Slow rotation for the radar sweep arm */
+@keyframes radar-spin { to { transform: rotate(360deg); } }
+.radar-spin { animation: radar-spin 14s linear infinite; }
+
+/* Slow shimmer sweep across product frames */
+@keyframes frame-shine {
+  0%   { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  12%  { opacity: 0.5; }
+  30%  { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+  100% { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+}
+.animate-frame-shine { animation: frame-shine 7s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-ping, .radar-spin,
+  .animate-frame-shine, .animate-drift, .animate-marquee,
+  .animate-float-y, .animate-sweep, .animate-live { animation: none !important; }
 }

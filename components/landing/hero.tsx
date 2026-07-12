@@ -1,94 +1,139 @@
+"use client";
+
+import { useRef } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Play } from "lucide-react";
-import { Reveal } from "@/components/landing/reveal";
-import { NetworkGraph } from "@/components/landing/network-graph";
+import { motion, useScroll, useTransform, type Variants } from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { BrowserFrame } from "@/components/landing/browser-frame";
+import { CountUp } from "@/components/landing/count-up";
+import { RadarField } from "@/components/landing/radar-field";
+
+const STATS = [
+  { node: <CountUp to={2.4} decimals={1} suffix="B+" />, label: "requests observed" },
+  { node: <CountUp to={1} prefix="<" suffix="min" />, label: "to first live data" },
+  { node: <CountUp to={99.99} decimals={2} suffix="%" />, label: "pipeline uptime" },
+];
+
+const container: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+};
+
+const item: Variants = {
+  hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] } },
+};
 
 export function Hero() {
+  const shotRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: shotRef, offset: ["start 0.85", "end start"] });
+  // Crisp and near-flat at rest; only a whisper of depth + parallax drift.
+  const shotY = useTransform(scrollYProgress, [0, 1], [0, -70]);
+  const shotRotate = useTransform(scrollYProgress, [0, 0.5], [3, 0]);
+  const shotScale = useTransform(scrollYProgress, [0, 0.5], [0.985, 1]);
+
   return (
-    <section className="relative isolate">
-      {/* Misty ambient glow — built from the Liveboard mark's own palette */}
-      <div
-        className="animate-drift pointer-events-none absolute -top-24 left-1/2 -z-10 h-[480px] w-[820px] rounded-full opacity-[0.32] blur-[100px]"
-        style={{ background: "conic-gradient(from 90deg, #06B6D4, #F59E0B, #F43F5E, #3B82F6, #A855F7, #06B6D4)" }}
-      />
-      <div
-        className="pointer-events-none absolute -top-10 left-1/2 -z-10 h-[300px] w-[460px] -translate-x-1/2 rounded-full opacity-[0.18] blur-[90px]"
-        style={{ background: "radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%)" }}
-      />
+    <section className="relative isolate overflow-hidden px-6 pt-36 sm:pt-40">
+      {/* Radar backdrop */}
+      <RadarField />
 
-      <NetworkGraph />
-
-      <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 pt-10 pb-16 text-center lg:pt-16">
-        <Reveal className="flex flex-col items-center">
+      <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-3xl text-center">
+        <motion.div variants={item}>
           <Link
-            href="#how-it-works"
-            aria-label="See how Liveboard works"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] transition-transform hover:scale-105"
+            href="#tracing"
+            className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] py-1 pl-1 pr-3 font-mono text-[12px] text-[#b4b4bc] backdrop-blur-sm transition-colors hover:border-white/20"
           >
-            <Play className="h-5 w-5 fill-[#0A0A0A] text-[#0A0A0A]" />
+            <span className="flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-white">
+              <Sparkles className="h-3 w-3 text-[#4B9AED]" />
+              New
+            </span>
+            AI incident summaries are live
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
           </Link>
+        </motion.div>
 
+        <h1 className="mt-6 font-display text-[2.7rem] font-semibold leading-[1.05] tracking-[-0.02em] sm:text-6xl lg:text-[4.25rem]">
+          <motion.span variants={item} className="block">
+            <span className="gradient-text">Know the moment</span>
+          </motion.span>
+          <motion.span variants={item} className="block">
+            <span className="gradient-text">your API </span>
+            <span className="gradient-accent">breaks</span>
+            <span className="gradient-text">.</span>
+          </motion.span>
+        </h1>
+
+        <motion.p variants={item} className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-[#8a8a94] sm:text-base">
+          Real-time observability for your APIs. Distributed traces, live error tracking,
+          and AI-written incident postmortems — from a single line of middleware.
+        </motion.p>
+
+        <motion.div variants={item} className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="#features"
-            className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-[#262626] bg-[#121212]/90 px-3.5 py-1.5 text-[12px] text-[#aaa] backdrop-blur-sm transition-colors hover:border-blue-border hover:text-[#F5F5F5]"
+            href="/auth/signin"
+            className="group flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#0A0A0A] transition-transform hover:scale-[1.03] active:scale-95 sm:w-auto"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-green animate-pulse" />
-            Real-time API observability
-            <ArrowUpRight className="h-3 w-3" />
+            Start for free
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
+          <a
+            href="https://github.com/ryzrr/liveboard"
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-[#e4e4ec] backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.06] sm:w-auto"
+          >
+            <span className="font-mono text-[13px] text-[#8a8a94]">$</span>
+            npm i liveboard-sdk
+          </a>
+        </motion.div>
 
-          <h1 className="mt-6 text-[2.9rem] leading-[1.05] font-display font-bold tracking-tight text-[#F5F5F5] sm:text-6xl lg:text-[4.2rem]">
-            Know the moment
-            <br />
-            your API <span className="text-blue">breaks.</span>
-          </h1>
+        <motion.p variants={item} className="mt-5 font-mono text-[12px] tracking-tight text-[#5a5a62]">
+          Open source · Self-hostable · Free to start
+        </motion.p>
+      </motion.div>
 
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-[#999]">
-            One line of middleware. Real-time traces, error tracking, and AI incident summaries.
-          </p>
-
-          <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/auth/signin"
-              className="flex items-center gap-1.5 rounded-full border border-[#262626] bg-[#141414] px-5 py-2.5 text-sm font-medium text-[#F5F5F5] transition-transform hover:scale-[1.03] hover:border-[#333] active:scale-[0.98]"
-            >
-              Open dashboard
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="flex items-center rounded-full bg-[#F5F5F5] px-5 py-2.5 text-sm font-medium text-[#0A0A0A] transition-transform hover:scale-[1.03] hover:bg-white active:scale-[0.98]"
-            >
-              See how it works
-            </Link>
-
-            {/* Falling light rays */}
-            <div className="pointer-events-none absolute left-1/2 top-full hidden -translate-x-1/2 gap-7 pt-2 sm:flex">
-              <span className="h-16 w-px bg-gradient-to-b from-[#333] to-transparent" />
-              <span className="h-24 w-px bg-gradient-to-b from-[#333] to-transparent" />
-              <span className="h-10 w-px bg-gradient-to-b from-[#333] to-transparent" />
-            </div>
+      {/* Real product shot — near-flat, subtle scroll parallax */}
+      <div ref={shotRef} className="relative mx-auto mt-16 max-w-5xl [perspective:2000px]">
+        {/* subtle monochrome ambient behind the frame */}
+        <div className="pointer-events-none absolute -inset-x-8 -top-8 bottom-10 -z-10 rounded-[40px] bg-white/[0.03] blur-3xl" />
+        <motion.div
+          style={{ y: shotY, rotateX: shotRotate, scale: shotScale, transformPerspective: 2000 }}
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.35, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="relative origin-top will-change-transform"
+        >
+          <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-xl">
+            <div className="animate-frame-shine absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
           </div>
-        </Reveal>
+          <BrowserFrame
+            src="/shots/overview.png"
+            alt="Liveboard overview dashboard — live request metrics, charts and streaming request log"
+            url="app.liveboard.dev/overview"
+            width={3040}
+            height={1900}
+            priority
+            live
+          />
+        </motion.div>
+        <div className="pointer-events-none absolute inset-x-0 -bottom-1 h-48 bg-gradient-to-b from-transparent to-[#08080A]" />
       </div>
 
-      <div className="absolute bottom-6 left-6 hidden items-center gap-2.5 lg:flex">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A]">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 1v8M1.5 5.5L5 9l3.5-3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-        <span className="text-[11px] text-[#666]">01 / 03 &middot; Scroll down</span>
-      </div>
-
-      <div className="absolute bottom-6 right-6 hidden flex-col items-end gap-2 lg:flex">
-        <span className="text-[11px] text-[#666]">Service map</span>
-        <div className="flex gap-1">
-          <span className="h-1 w-6 rounded-full bg-blue" />
-          <span className="h-1 w-6 rounded-full bg-[#262626]" />
-          <span className="h-1 w-6 rounded-full bg-[#262626]" />
-        </div>
-      </div>
+      {/* Stat band with count-up */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.6 }}
+        className="mx-auto mt-14 grid max-w-3xl grid-cols-3 gap-4 border-t border-white/[0.06] pt-10"
+      >
+        {STATS.map((s, i) => (
+          <div key={i} className="text-center">
+            <div className="font-mono text-2xl font-semibold tracking-tight text-white sm:text-[1.75rem]">{s.node}</div>
+            <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6b74]">{s.label}</div>
+          </div>
+        ))}
+      </motion.div>
     </section>
   );
 }

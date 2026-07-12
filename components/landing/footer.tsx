@@ -36,8 +36,8 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-[#1E1E1E] bg-[#0A0A0A]">
-      <div className="mx-auto max-w-6xl px-6 py-14">
+    <footer className="border-t border-white/[0.06] bg-[#08080A]">
+      <div className="mx-auto max-w-5xl px-6 py-14">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2">

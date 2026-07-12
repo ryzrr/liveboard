@@ -48,12 +48,12 @@ export function LiveboardWordmark({ height = 36, className }: { height?: number;
       <text
         x="80"
         y="36"
-        fontFamily="var(--font-space-grotesk),'Space Grotesk',system-ui,sans-serif"
-        fontWeight="700"
+        fontFamily="var(--font-sora),var(--font-geist-sans),system-ui,sans-serif"
+        fontWeight="600"
         fontSize="34"
         fill="white"
         dominantBaseline="central"
-        letterSpacing="-1"
+        letterSpacing="-1.2"
       >
         Liveboard
       </text>

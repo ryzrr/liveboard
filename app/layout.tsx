@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Sora } from "next/font/google";
 import "./globals.css";
+
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-sora",
+});
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ProjectProvider } from "@/components/providers/project-provider";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-space-grotesk",
-});
 
 export const metadata: Metadata = {
   title: "Liveboard — API Observability",
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${sora.variable}`}>
       <body className="bg-[#0A0A0A] text-[#F5F5F5] antialiased font-sans">
         <SessionProvider>
           <ProjectProvider>
