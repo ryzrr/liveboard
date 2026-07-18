@@ -41,23 +41,42 @@ BLOCK_MS = 2_000  # how long XREAD blocks before we send a keep-alive
 async def _authenticate_sse(
     x_api_key: str | None = Header(default=None),
     api_key: str | None = Query(default=None),
+    token: str | None = Query(default=None),
+    redis: aioredis.Redis = Depends(get_redis),
 ) -> str:
-    """Resolve project_id from header or query-param API key."""
+    """
+    Resolve project_id from, in order:
+      • a short-lived realtime token (browser, Phase 8.4), or
+      • an x-api-key header / ?api_key= query param (SDK/programmatic).
+    """
     import hashlib
+
+    from realtime.tokens import resolve_realtime_token
+
+    if token:
+        project_id = await resolve_realtime_token(redis, token)
+        if project_id:
+            return project_id
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     raw_key = x_api_key or api_key
     if not raw_key:
-        raise HTTPException(status_code=401, detail="api_key required")
+        raise HTTPException(status_code=401, detail="token or api_key required")
 
     hashed = hashlib.sha256(raw_key.encode()).hexdigest()
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id FROM projects WHERE api_key = $1", hashed
+            "SELECT project_id FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL",
+            hashed,
         )
+        if row is None:
+            row = await conn.fetchrow(
+                "SELECT id AS project_id FROM projects WHERE api_key = $1", hashed
+            )
     if not row:
         raise HTTPException(status_code=401, detail="Invalid API key")
-    return str(row["id"])
+    return str(row["project_id"])
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

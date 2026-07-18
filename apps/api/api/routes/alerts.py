@@ -1,6 +1,6 @@
 """
 Alert rules CRUD + alert history endpoints.
-All routes require x-api-key auth via authenticate_project dependency.
+All routes require x-api-key auth via resolve_project_id dependency.
 """
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ import logging
 from datetime import datetime
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
-from api.deps import authenticate_project, get_db
+from api.deps import resolve_project_id, get_db, scoped_conn
 from api.schemas import (
     AlertHistoryOut,
     AlertRuleOut,
@@ -42,8 +42,8 @@ def _rule_row_to_out(row: asyncpg.Record) -> AlertRuleOut:
 
 @router.get("/alert-rules", response_model=list[AlertRuleOut])
 async def list_alert_rules(
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[AlertRuleOut]:
     rows = await conn.fetch(
         """
@@ -63,7 +63,7 @@ async def list_alert_rules(
 @router.post("/alert-rules", response_model=AlertRuleOut, status_code=201)
 async def create_alert_rule(
     body: CreateAlertRuleRequest,
-    project_id: str = Depends(authenticate_project),
+    project_id: str = Depends(resolve_project_id),
     conn: asyncpg.Connection = Depends(get_db),
 ) -> AlertRuleOut:
     row = await conn.fetchrow(
@@ -92,7 +92,7 @@ async def create_alert_rule(
 async def update_alert_rule(
     rule_id: str,
     body: UpdateAlertRuleRequest,
-    project_id: str = Depends(authenticate_project),
+    project_id: str = Depends(resolve_project_id),
     conn: asyncpg.Connection = Depends(get_db),
 ) -> AlertRuleOut:
     existing = await conn.fetchrow(
@@ -138,12 +138,12 @@ async def update_alert_rule(
 
 # ─── Delete ──────────────────────────────────────────────────────────────────
 
-@router.delete("/alert-rules/{rule_id}", status_code=204)
+@router.delete("/alert-rules/{rule_id}", status_code=204, response_model=None, response_class=Response)
 async def delete_alert_rule(
     rule_id: str,
-    project_id: str = Depends(authenticate_project),
+    project_id: str = Depends(resolve_project_id),
     conn: asyncpg.Connection = Depends(get_db),
-) -> None:
+) -> Response:
     result = await conn.execute(
         "DELETE FROM alert_rules WHERE id = $1 AND project_id = $2",
         rule_id,
@@ -151,6 +151,7 @@ async def delete_alert_rule(
     )
     if result == "DELETE 0":
         raise HTTPException(status_code=404, detail="Alert rule not found")
+    return Response(status_code=204)
 
 
 # ─── History ─────────────────────────────────────────────────────────────────
@@ -166,8 +167,8 @@ def _duration_str(fired_at: datetime, resolved_at: datetime | None) -> str:
 
 @router.get("/alert-history", response_model=list[AlertHistoryOut])
 async def get_alert_history(
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[AlertHistoryOut]:
     rows = await conn.fetch(
         """

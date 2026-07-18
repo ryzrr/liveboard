@@ -16,39 +16,55 @@ import logging
 
 import socketio
 
+from core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Async Socket.io server — wraps FastAPI via socketio.ASGIApp in main.py
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins="*",
+    cors_allowed_origins=settings.cors_origin_list,
     logger=False,
     engineio_logger=False,
 )
 
 
 async def _resolve_project(api_key: str) -> str | None:
-    """SHA-256 key lookup — same logic as api/deps.py authenticate_project."""
+    """SHA-256 key lookup — api_keys (non-revoked) first, legacy column fallback."""
     from core.database import get_pool
 
     hashed = hashlib.sha256(api_key.encode()).hexdigest()
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id FROM projects WHERE api_key = $1", hashed
+            "SELECT project_id FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL",
+            hashed,
         )
-    return str(row["id"]) if row else None
+        if row is None:
+            row = await conn.fetchrow(
+                "SELECT id AS project_id FROM projects WHERE api_key = $1", hashed
+            )
+    return str(row["project_id"]) if row else None
 
 
 @sio.event
 async def connect(sid: str, environ: dict, auth: dict | None) -> None:
-    api_key: str = (auth or {}).get("api_key", "")
-    if not api_key:
-        raise ConnectionRefusedError("api_key required")
+    auth = auth or {}
+    token = auth.get("token", "")
+    api_key = auth.get("api_key", "")
 
-    project_id = await _resolve_project(api_key)
+    project_id: str | None = None
+    if token:
+        # Browser path: short-lived, project-scoped realtime token (Phase 8.4).
+        from core.redis_client import get_redis
+        from realtime.tokens import resolve_realtime_token
+
+        project_id = await resolve_realtime_token(await get_redis(), token)
+    elif api_key:
+        project_id = await _resolve_project(api_key)
+
     if not project_id:
-        raise ConnectionRefusedError("invalid api_key")
+        raise ConnectionRefusedError("valid token or api_key required")
 
     await sio.enter_room(sid, f"project:{project_id}")
     await sio.save_session(sid, {"project_id": project_id})
