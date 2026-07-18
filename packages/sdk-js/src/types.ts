@@ -27,6 +27,16 @@ export interface LiveBoardConfig {
   flushInterval?: number;
   /** Flush early when the buffer reaches this many events. Default: 100 */
   batchSize?: number;
+  /**
+   * Service name attached to emitted spans (shown in the trace/flame view).
+   * Default: 'api'
+   */
+  service?: string;
+  /**
+   * Emit a distributed-tracing span per request. Default: true.
+   * Set false to send only request events (no spans).
+   */
+  tracing?: boolean;
 }
 
 // ─── Internal resolved config (all fields required + defaults applied) ────────
@@ -39,6 +49,8 @@ export interface ResolvedConfig {
   getUserId: (req: IncomingMessage) => string | undefined;
   flushInterval: number;
   batchSize: number;
+  service: string;
+  tracing: boolean;
 }
 
 // ─── Wire format — must match apps/api/api/schemas.py EventPayload exactly ───
@@ -57,4 +69,22 @@ export interface EventPayload {
 
 export interface IngestBatch {
   events: EventPayload[];
+}
+
+// ─── Span wire format — must match apps/api/api/schemas.py SpanIn exactly ─────
+
+export interface SpanPayload {
+  span_id: string;
+  trace_id: string;
+  parent_id?: string;
+  service_name: string;
+  operation: string;
+  start_time: string;      // ISO 8601 UTC
+  duration_ms: number;
+  status_code: number;
+  tags: Record<string, string>;
+}
+
+export interface SpanBatch {
+  spans: SpanPayload[];
 }
