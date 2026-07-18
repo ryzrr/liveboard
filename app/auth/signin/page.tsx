@@ -2,12 +2,11 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { LiveboardIcon } from "@/components/logo";
 
 const hasGoogle =
   Boolean(process.env.NEXT_PUBLIC_GOOGLE_ENABLED) ||
-  // fallback: let the server tell us via the error message
   false;
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -20,7 +19,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   Configuration: "Auth is not fully configured yet.",
 };
 
-export default function SignInPage() {
+function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/overview";
   const error = searchParams.get("error");
@@ -136,6 +135,14 @@ export default function SignInPage() {
         <p className="mt-6 text-center text-xs text-[#333]">Open source API observability</p>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A]" />}>
+      <SignInForm />
+    </Suspense>
   );
 }
 

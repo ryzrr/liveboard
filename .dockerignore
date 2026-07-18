@@ -1,0 +1,34 @@
+# Node
+node_modules
+npm-debug.log*
+.npm
+
+# Next.js build output (rebuilt inside Docker)
+.next
+out
+
+# Git
+.git
+.gitignore
+.github
+
+# Environment files (secrets — never bake into image)
+.env
+.env.*
+!.env.example
+
+# Dev tooling
+.eslintcache
+*.log
+
+# Python
+apps/api/__pycache__
+apps/api/.ruff_cache
+apps/**/__pycache__
+apps/**/*.pyc
+apps/**/*.pyo
+
+# Misc
+*.md
+.claude
+infra
