@@ -18,6 +18,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<CreateProjectResult | null>(null);
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,10 +32,11 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
       setError("");
       setResult(null);
       setCopied(false);
+      setSubmitting(false);
     }, 200);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
@@ -49,9 +51,17 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
       setError("Name must be 60 characters or less.");
       return;
     }
-    const created = createProject(trimmed);
-    setResult(created);
-    setStep("apikey");
+    setSubmitting(true);
+    setError("");
+    try {
+      const created = await createProject(trimmed);
+      setResult(created);
+      setStep("apikey");
+    } catch {
+      setError("Couldn't create project. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const copyKey = useCallback(() => {
@@ -113,8 +123,8 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                 <Button variant="ghost" size="sm" type="button" onClick={resetAndClose}>
                   Cancel
                 </Button>
-                <Button variant="primary" size="sm" type="submit" disabled={!name.trim()}>
-                  Create project
+                <Button variant="primary" size="sm" type="submit" disabled={!name.trim() || submitting}>
+                  {submitting ? "Creating…" : "Create project"}
                 </Button>
               </div>
             </form>

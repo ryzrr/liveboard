@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getSocket, type MetricUpdate } from "@/lib/socket";
+import { fetchRealtimeToken } from "@/lib/realtime";
 import type { Incident, StatCard } from "@/lib/types";
 
 const SPARKLINE_LENGTH = 20;
@@ -27,11 +28,12 @@ function mockMetric(): MetricUpdate {
 }
 
 /**
- * Connects to the Socket.io server and returns live stat-card data.
- * When no API key / live backend is available, falls back to a self-updating
- * demo stream so the dashboard always feels alive instead of stuck "connecting…".
+ * Streams live stat-card data for a project. Fetches a short-lived, project-
+ * scoped realtime token from the BFF (no API key in the browser). When there's
+ * no project / backend, falls back to a self-updating demo stream so the
+ * dashboard always feels alive instead of stuck "connecting…".
  */
-export function useMetrics(apiKey: string | null) {
+export function useMetrics(projectId: string | null) {
   const [cards, setCards] = useState<StatCard[]>(emptyCards);
 
   const history = useRef<{
@@ -100,7 +102,6 @@ export function useMetrics(apiKey: string | null) {
     }
 
     let mockTimer: ReturnType<typeof setInterval> | null = null;
-    let gotReal = false;
 
     function startMock() {
       if (mockTimer) return;
@@ -109,35 +110,41 @@ export function useMetrics(apiKey: string | null) {
       mockTimer = setInterval(() => applyUpdate(mockMetric()), 2000);
     }
 
-    if (!apiKey) {
+    // No project context (logged-out / loading) → synthetic demo so the UI
+    // isn't dead. A REAL project never shows synthetic numbers.
+    if (!projectId) {
       startMock();
       return () => {
         if (mockTimer) clearInterval(mockTimer);
       };
     }
 
-    const socket = getSocket(apiKey);
-    function onMetric(update: MetricUpdate) {
-      gotReal = true;
-      if (mockTimer) {
-        clearInterval(mockTimer);
-        mockTimer = null;
-      }
-      applyUpdate(update);
-    }
-    socket.on("metric", onMetric);
+    let cancelled = false;
+    let socket: ReturnType<typeof getSocket> | null = null;
+    let onMetric: ((update: MetricUpdate) => void) | null = null;
 
-    // If no real metric arrives shortly, switch to demo mode.
-    const grace = setTimeout(() => {
-      if (!gotReal) startMock();
-    }, 1500);
+    void (async () => {
+      const token = await fetchRealtimeToken(projectId);
+      if (cancelled) return;
+      if (!token) {
+        // Realtime unavailable entirely (backend down) — demo fallback for dev.
+        startMock();
+        return;
+      }
+      // Real project + realtime available → show ONLY real metrics. When there's
+      // no traffic in the last minute the worker publishes nothing, so the cards
+      // stay at their empty ("—") state — which is the honest answer.
+      socket = getSocket(token);
+      onMetric = (update: MetricUpdate) => applyUpdate(update);
+      socket.on("metric", onMetric);
+    })();
 
     return () => {
-      socket.off("metric", onMetric);
-      clearTimeout(grace);
+      cancelled = true;
+      if (socket && onMetric) socket.off("metric", onMetric);
       if (mockTimer) clearInterval(mockTimer);
     };
-  }, [apiKey]);
+  }, [projectId]);
 
   return cards;
 }
@@ -156,33 +163,41 @@ interface RawIncidentPush {
  * Listens for real-time `incident` Socket.io events pushed by the anomaly worker.
  * Returns newly pushed incidents so the caller can prepend them to the REST list.
  */
-export function useIncidentSocket(apiKey: string | null): Incident[] {
+export function useIncidentSocket(projectId: string | null): Incident[] {
   const [live, setLive] = useState<Incident[]>([]);
 
   useEffect(() => {
-    if (!apiKey) return;
+    if (!projectId) return;
 
-    const socket = getSocket(apiKey);
+    let cancelled = false;
+    let socket: ReturnType<typeof getSocket> | null = null;
+    let onIncident: ((raw: RawIncidentPush) => void) | null = null;
 
-    function onIncident(raw: RawIncidentPush) {
-      const incident: Incident = {
-        id: raw.id,
-        severity: raw.severity as Incident["severity"],
-        title: raw.title,
-        summary: raw.summary,
-        endpoint: raw.endpoint,
-        timestamp: new Date(raw.timestamp),
-        resolved: raw.resolved,
+    void (async () => {
+      const token = await fetchRealtimeToken(projectId);
+      if (cancelled || !token) return;
+      socket = getSocket(token);
+      onIncident = (raw: RawIncidentPush) => {
+        const incident: Incident = {
+          id: raw.id,
+          severity: raw.severity as Incident["severity"],
+          title: raw.title,
+          summary: raw.summary,
+          endpoint: raw.endpoint,
+          timestamp: new Date(raw.timestamp),
+          resolved: raw.resolved,
+        };
+        // Prepend; deduplicate by id; keep at most 20 live-pushed incidents
+        setLive((prev) => [incident, ...prev.filter((i) => i.id !== raw.id)].slice(0, 20));
       };
-      // Prepend; deduplicate by id; keep at most 20 live-pushed incidents
-      setLive((prev) => [incident, ...prev.filter((i) => i.id !== raw.id)].slice(0, 20));
-    }
+      socket.on("incident", onIncident);
+    })();
 
-    socket.on("incident", onIncident);
     return () => {
-      socket.off("incident", onIncident);
+      cancelled = true;
+      if (socket && onIncident) socket.off("incident", onIncident);
     };
-  }, [apiKey]);
+  }, [projectId]);
 
   return live;
 }
