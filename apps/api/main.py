@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import alerts, ingest, internal, projects, query, spans
+from core.config import settings
 from core.database import close_pool, get_pool
 from core.redis_client import close_redis
 from realtime.pubsub import listen_pubsub
@@ -56,11 +57,9 @@ _fastapi = FastAPI(
     redoc_url=None,
 )
 
-from core.config import settings as _settings
-
 _fastapi.add_middleware(
     CORSMiddleware,
-    allow_origins=_settings.cors_origin_list,
+    allow_origins=settings.cors_origin_list,
     allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
