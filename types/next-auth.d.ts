@@ -5,5 +5,17 @@ declare module "next-auth" {
     user: {
       id: string;
     } & DefaultSession["user"];
+    /** Project IDs the signed-in user is authorized to read (org membership scope). */
+    projectIds?: string[];
+    /** The project shown by default in the dashboard. */
+    defaultProjectId?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    userId?: string;
+    projectIds?: string[];
+    defaultProjectId?: string;
   }
 }

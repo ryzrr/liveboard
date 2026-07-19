@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { useProjects } from "@/components/providers/project-provider";
 
 /**
  * Generic hook for REST API data.
@@ -17,12 +18,18 @@ export function useApiQuery<T>(
   transform?: (raw: unknown) => T,
   pollMs?: number,
 ): { data: T; loading: boolean; refetch: () => void } {
+  const { activeProject } = useProjects();
+  const projectId = activeProject?.id ?? null;
+
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
 
+  // Scope every request to the active project (the BFF verifies membership).
+  const effectiveParams = projectId ? { ...params, project: projectId } : params;
+
   // Stable string key — avoids object-reference churn in the dependency array
-  const paramKey = Object.entries(params)
+  const paramKey = Object.entries(effectiveParams)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
@@ -38,7 +45,15 @@ export function useApiQuery<T>(
       setLoading(true);
     }
 
-    apiFetch<unknown>(path, params)
+    // No active project yet → show fallback (demo) instead of a scopeless call.
+    if (!projectId) {
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    apiFetch<unknown>(path, effectiveParams)
       .then((raw) => {
         if (!active) return;
         setData(transform ? transform(raw) : (raw as T));
@@ -53,7 +68,7 @@ export function useApiQuery<T>(
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, paramKey, tick]);
+  }, [path, paramKey, tick, projectId]);
 
   // Reset tick (and clear stale data) whenever the query params change
   const prevParamKey = useRef(paramKey);
@@ -72,5 +87,11 @@ export function useApiQuery<T>(
     return () => clearInterval(id);
   }, [pollMs]);
 
-  return { data: data ?? fallback, loading, refetch };
+  // Honesty rule: a REAL project never shows the demo `fallback`. While loading
+  // or on error it shows an empty result (empty state), not fabricated data.
+  // The demo `fallback` is only used when there's no project (landing / loading).
+  const emptyFallback = (Array.isArray(fallback) ? ([] as unknown as T) : fallback);
+  const effectiveFallback = projectId ? emptyFallback : fallback;
+
+  return { data: data ?? effectiveFallback, loading, refetch };
 }

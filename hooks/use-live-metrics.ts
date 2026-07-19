@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useProjects } from "@/components/providers/project-provider";
+import { fetchRealtimeToken } from "@/lib/realtime";
 import type { LogEntry } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -56,12 +58,16 @@ export function useLiveLog(maxEntries = LOG_BUFFER) {
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mockRef    = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const { activeProject } = useProjects();
+  const projectId = activeProject?.id ?? null;
+
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_LIVEBOARD_API_KEY ?? "";
+    let cancelled = false;
+    let token: string | null = null;
 
     function startMock() {
       if (mockRef.current) return;
@@ -73,13 +79,22 @@ export function useLiveLog(maxEntries = LOG_BUFFER) {
       }, 900);
     }
 
-    function connect() {
-      if (!apiKey) {
+    async function connect() {
+      if (cancelled) return;
+      if (!projectId) {
+        startMock();
+        return;
+      }
+      // Short-lived, project-scoped realtime token (Phase 8.4) — refetched on
+      // each (re)connect so an expired token self-heals.
+      token = await fetchRealtimeToken(projectId);
+      if (cancelled) return;
+      if (!token) {
         startMock();
         return;
       }
 
-      const url = `${API_URL}/v1/stream/logs?api_key=${encodeURIComponent(apiKey)}`;
+      const url = `${API_URL}/v1/stream/logs?token=${encodeURIComponent(token)}`;
       const es = new EventSource(url);
       esRef.current = es;
 
@@ -126,16 +141,20 @@ export function useLiveLog(maxEntries = LOG_BUFFER) {
       };
     }
 
-    connect();
+    void connect();
 
     return () => {
+      cancelled = true;
       esRef.current?.close();
       esRef.current = null;
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (mockRef.current) clearInterval(mockRef.current);
+      if (mockRef.current) {
+        clearInterval(mockRef.current);
+        mockRef.current = null;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxEntries]);
+  }, [maxEntries, projectId]);
 
   return { logs, paused, setPaused, connected };
 }

@@ -16,13 +16,34 @@ class Settings(BaseSettings):
     api_secret_key: SecretStr
     ingest_api_port: int = 8000
 
+    # ── Internal service auth (BFF ↔ backend, Phase 8.2) ──────────────────────
+    # Trusted token the Next.js dashboard server uses to call /v1/internal/*
+    # and to make session-scoped reads. Empty in dev → the master key is
+    # accepted as a fallback (see api.deps.authenticate_internal). Set a
+    # dedicated strong value in production.
+    internal_service_token: SecretStr = SecretStr("")
+
     # ── AI (Phase 5 — Cerebras) ───────────────────────────────────────────────
     cerebras_api_key: SecretStr = SecretStr("")
+
+    # ── CORS / realtime origins (Phase 8.5) ──────────────────────────────────
+    # Comma-separated list of allowed browser origins (dashboard + status page).
+    # Only realtime (Socket.io / SSE) hits the API cross-origin — REST goes
+    # through the same-origin BFF.
+    cors_origins: str = "http://localhost:3000"
+
+    # ── Per-project ingest rate limit (Phase 8.5) ─────────────────────────────
+    # Max events accepted per project per minute (fixed window). 0 = unlimited.
+    ingest_rate_limit_per_min: int = 120_000
 
     # ── Environment ───────────────────────────────────────────────────────────
     environment: str = "development"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @field_validator("api_secret_key", mode="after")
     @classmethod

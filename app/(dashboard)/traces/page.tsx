@@ -37,9 +37,15 @@ export default function TracesPage() {
   const { data: traces } = useTraces();
   const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
 
-  // Auto-select first trace when data first arrives
+  // Keep the selection in sync with the current trace list: clear it when the
+  // list is empty (e.g. a real project with no spans, or after switching
+  // projects), and pick the first trace when the current one is gone.
   useEffect(() => {
-    if (traces.length > 0 && !selectedTrace) setSelectedTrace(traces[0]);
+    if (traces.length === 0) {
+      setSelectedTrace(null);
+    } else if (!selectedTrace || !traces.some((t) => t.id === selectedTrace.id)) {
+      setSelectedTrace(traces[0]);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [traces]);
   const [selectedSpan, setSelectedSpan] = useState<TraceSpan | null>(null);

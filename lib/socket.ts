@@ -13,14 +13,25 @@ export interface MetricUpdate {
 // ─── Singleton ───────────────────────────────────────────────────────────────
 
 let _socket: Socket | null = null;
+let _token: string | null = null;
 
-export function getSocket(apiKey: string): Socket {
-  if (_socket) return _socket;
+/**
+ * Connect (or reuse) the Socket.io singleton using a short-lived, project-scoped
+ * realtime token. When the token changes (e.g. project switch), the old socket
+ * is torn down and a fresh one is created for the new project room.
+ */
+export function getSocket(token: string): Socket {
+  if (_socket && _token === token) return _socket;
+  if (_socket) {
+    _socket.disconnect();
+    _socket = null;
+  }
+  _token = token;
 
   const url = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   _socket = io(url, {
-    auth: { api_key: apiKey },
+    auth: { token },
     // Exponential back-off: 1 s → 2 s → 4 s → 8 s (capped)
     reconnectionDelay: 1_000,
     reconnectionDelayMax: 8_000,
@@ -47,4 +58,5 @@ export function getSocket(apiKey: string): Socket {
 export function disconnectSocket(): void {
   _socket?.disconnect();
   _socket = null;
+  _token = null;
 }

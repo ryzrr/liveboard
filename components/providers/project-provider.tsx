@@ -14,7 +14,7 @@ import { useSession } from "next-auth/react";
 export interface Project {
   id: string;
   name: string;
-  /** Masked display-only key: lb_live_abcd1234...ef12 */
+  /** Masked display-only key hint: lb_live_abcd•••• */
   apiKeyMasked: string;
   createdAt: string;
 }
@@ -28,144 +28,148 @@ export interface CreateProjectResult {
 interface ProjectContextValue {
   projects: Project[];
   activeProject: Project | null;
+  loading: boolean;
   setActiveProject: (project: Project) => void;
-  createProject: (name: string) => CreateProjectResult;
-  deleteProject: (id: string) => void;
+  createProject: (name: string) => Promise<CreateProjectResult>;
+  deleteProject: (id: string) => Promise<void>;
+  rotateKey: (id: string) => Promise<string>;
+  refresh: () => Promise<void>;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function randomHex(bytes: number): string {
-  const buf = new Uint8Array(bytes);
-  crypto.getRandomValues(buf);
-  return Array.from(buf)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+// Backend `ProjectDetail` shape (snake_case) returned by the BFF.
+interface ProjectDetailDTO {
+  id: string;
+  name: string;
+  org_id: string;
+  api_key_masked: string;
+  created_at: string;
 }
 
-function generateApiKey(): { raw: string; masked: string } {
-  const hex = randomHex(32);
-  return {
-    raw: `lb_live_${hex}`,
-    masked: `lb_live_${hex.slice(0, 8)}...${hex.slice(-4)}`,
-  };
+function fromDTO(d: ProjectDetailDTO): Project {
+  return { id: d.id, name: d.name, apiKeyMasked: d.api_key_masked, createdAt: d.created_at };
 }
 
-function generateId(): string {
-  return randomHex(16);
-}
-
-function storageKey(userId: string) {
-  return `lb_projects_${userId}`;
-}
-
-function activeKey(userId: string) {
-  return `lb_active_${userId}`;
+function maskRaw(raw: string): string {
+  return `${raw.slice(0, 12)}${"•".repeat(20)}`;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
 
+function activeStorageKey(userId: string) {
+  return `lb_active_${userId}`;
+}
+
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userId = session?.user?.id ?? session?.user?.email ?? null;
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load from localStorage when userId becomes available
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if (!userId) return;
-
-    const raw = localStorage.getItem(storageKey(userId));
-    const stored: Project[] = raw ? (JSON.parse(raw) as Project[]) : [];
-
-    if (stored.length === 0) {
-      // Seed a default project on first sign-in
-      const { raw: rawKey, masked } = generateApiKey();
-      const defaultProject: Project = {
-        id: generateId(),
-        name: "My API",
-        apiKeyMasked: masked,
-        createdAt: new Date().toISOString(),
-      };
-      // We discard rawKey here — user would use "Create project" flow for new ones
-      void rawKey;
-      const seeded = [defaultProject];
-      localStorage.setItem(storageKey(userId), JSON.stringify(seeded));
-      setProjects(seeded);
-      setActiveProjectId(defaultProject.id);
-      localStorage.setItem(activeKey(userId), defaultProject.id);
-      return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/projects", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as ProjectDetailDTO[];
+      const mapped = data.map(fromDTO);
+      setProjects(mapped);
+      setActiveProjectId((prev) => {
+        if (prev && mapped.some((p) => p.id === prev)) return prev;
+        const saved = localStorage.getItem(activeStorageKey(userId));
+        if (saved && mapped.some((p) => p.id === saved)) return saved;
+        return mapped[0]?.id ?? null;
+      });
+    } catch {
+      // network/backend down — leave projects as-is
+    } finally {
+      setLoading(false);
     }
-
-    setProjects(stored);
-
-    const savedActive = localStorage.getItem(activeKey(userId));
-    const validActive = stored.find((p) => p.id === savedActive);
-    setActiveProjectId(validActive ? validActive.id : stored[0].id);
   }, [userId]);
 
-  const persist = useCallback(
-    (updated: Project[], newActiveId?: string) => {
-      if (!userId) return;
-      localStorage.setItem(storageKey(userId), JSON.stringify(updated));
-      if (newActiveId !== undefined) {
-        localStorage.setItem(activeKey(userId), newActiveId);
-      }
-    },
-    [userId]
-  );
+  // Load once the session is known.
+  useEffect(() => {
+    if (status === "loading") return;
+    if (userId) {
+      void refresh();
+    } else {
+      setProjects([]);
+      setActiveProjectId(null);
+      setLoading(false);
+    }
+  }, [status, userId, refresh]);
 
   const setActiveProject = useCallback(
     (project: Project) => {
       setActiveProjectId(project.id);
-      if (userId) localStorage.setItem(activeKey(userId), project.id);
+      if (userId) localStorage.setItem(activeStorageKey(userId), project.id);
     },
     [userId]
   );
 
   const createProject = useCallback(
-    (name: string): CreateProjectResult => {
-      const { raw, masked } = generateApiKey();
+    async (name: string): Promise<CreateProjectResult> => {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to create project");
+      const data = (await res.json()) as {
+        project: { id: string; name: string; org_id: string };
+        new_api_key: string;
+      };
+      await refresh();
+      setActiveProjectId(data.project.id);
+      if (userId) localStorage.setItem(activeStorageKey(userId), data.project.id);
       const project: Project = {
-        id: generateId(),
-        name: name.trim(),
-        apiKeyMasked: masked,
+        id: data.project.id,
+        name: data.project.name,
+        apiKeyMasked: maskRaw(data.new_api_key),
         createdAt: new Date().toISOString(),
       };
-      setProjects((prev) => {
-        const updated = [...prev, project];
-        persist(updated, project.id);
-        return updated;
-      });
-      setActiveProjectId(project.id);
-      return { project, rawApiKey: raw };
+      return { project, rawApiKey: data.new_api_key };
     },
-    [persist]
+    [refresh, userId]
   );
 
   const deleteProject = useCallback(
-    (id: string) => {
-      setProjects((prev) => {
-        const updated = prev.filter((p) => p.id !== id);
-        const newActive =
-          activeProjectId === id ? (updated[0]?.id ?? null) : activeProjectId;
-        persist(updated, newActive ?? undefined);
-        if (newActive !== activeProjectId) setActiveProjectId(newActive);
-        return updated;
-      });
+    async (id: string): Promise<void> => {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) throw new Error("Failed to delete project");
+      setActiveProjectId((prev) => (prev === id ? null : prev));
+      await refresh();
     },
-    [activeProjectId, persist]
+    [refresh]
   );
+
+  const rotateKey = useCallback(async (id: string): Promise<string> => {
+    const res = await fetch(`/api/projects/${id}/rotate`, { method: "POST" });
+    if (!res.ok) throw new Error("Failed to rotate key");
+    const data = (await res.json()) as { new_api_key: string };
+    await refresh();
+    return data.new_api_key;
+  }, [refresh]);
 
   const activeProject =
     projects.find((p) => p.id === activeProjectId) ?? projects[0] ?? null;
 
   return (
     <ProjectContext.Provider
-      value={{ projects, activeProject, setActiveProject, createProject, deleteProject }}
+      value={{
+        projects,
+        activeProject,
+        loading,
+        setActiveProject,
+        createProject,
+        deleteProject,
+        rotateKey,
+        refresh,
+      }}
     >
       {children}
     </ProjectContext.Provider>

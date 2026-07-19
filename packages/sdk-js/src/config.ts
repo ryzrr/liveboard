@@ -9,6 +9,8 @@ const DEFAULTS = {
   redactHeaders: ["authorization", "cookie"],
   flushInterval: 500,
   batchSize: 100,
+  service: "api",
+  tracing: true,
 } as const;
 
 export function resolveConfig(config: LiveBoardConfig): ResolvedConfig {
@@ -27,6 +29,8 @@ export function resolveConfig(config: LiveBoardConfig): ResolvedConfig {
     getUserId: config.getUserId ?? extractUserId,
     flushInterval: config.flushInterval ?? DEFAULTS.flushInterval,
     batchSize: config.batchSize ?? DEFAULTS.batchSize,
+    service: config.service ?? DEFAULTS.service,
+    tracing: config.tracing ?? DEFAULTS.tracing,
   };
 }
 

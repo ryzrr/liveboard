@@ -23,10 +23,11 @@ export default function OverviewPage() {
   const { data: chartData } = useChartData(hours);
   const { data: incidents } = useIncidents();
 
-  // Live stat cards + incidents via Socket.io — falls back to placeholders while connecting
-  const apiKey = process.env.NEXT_PUBLIC_LIVEBOARD_API_KEY ?? null;
-  const cards = useMetrics(apiKey);
-  const liveIncidents = useIncidentSocket(apiKey);
+  // Live stat cards + incidents via Socket.io — project-scoped realtime token
+  // fetched from the BFF; falls back to demo data while connecting / keyless.
+  const projectId = activeProject?.id ?? null;
+  const cards = useMetrics(projectId);
+  const liveIncidents = useIncidentSocket(projectId);
 
   return (
     <div className="flex flex-col min-h-screen">

@@ -1,16 +1,17 @@
 """
 Read-only analytics query endpoints.
-All use x-api-key header auth via authenticate_project dependency.
+All use x-api-key header auth via resolve_project_id dependency.
 """
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 
 import asyncpg
 from fastapi import APIRouter, Depends, Query
 
-from api.deps import authenticate_project, get_db
+from api.deps import resolve_project_id, scoped_conn
 from api.schemas import (
     EndpointStat,
     IncidentOut,
@@ -29,17 +30,22 @@ logger = logging.getLogger(__name__)
 @router.get("/metrics/timeseries", response_model=list[TimeseriesPoint])
 async def get_timeseries(
     hours: int = Query(24, ge=1, le=168),
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[TimeseriesPoint]:
     """Request volume and status-code breakdown bucketed over time."""
-    bucket = "5 minutes" if hours <= 6 else "15 minutes" if hours <= 24 else "1 hour"
+    # asyncpg encodes interval params from datetime.timedelta (not str).
+    bucket = (
+        datetime.timedelta(minutes=5) if hours <= 6
+        else datetime.timedelta(minutes=15) if hours <= 24
+        else datetime.timedelta(hours=1)
+    )
     fmt = "%H:%M" if hours <= 24 else "%b %d"
 
     rows = await conn.fetch(
         """
         SELECT
-            time_bucket($1::interval, time)                                          AS t,
+            time_bucket($1, time)                                                    AS t,
             COUNT(*)::int                                                             AS requests,
             SUM(CASE WHEN status_code < 400               THEN 1 ELSE 0 END)::int   AS req_2xx,
             SUM(CASE WHEN status_code BETWEEN 400 AND 499 THEN 1 ELSE 0 END)::int   AS req_4xx,
@@ -76,8 +82,8 @@ async def get_timeseries(
 @router.get("/endpoints", response_model=list[EndpointStat])
 async def get_endpoints(
     hours: int = Query(24, ge=1, le=168),
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[EndpointStat]:
     """Per-route aggregate stats with p50/p95/p99 latency percentiles."""
     rows = await conn.fetch(
@@ -132,8 +138,8 @@ async def get_endpoints(
 
 @router.get("/incidents", response_model=list[IncidentOut])
 async def get_incidents(
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[IncidentOut]:
     """Recent incidents from the AI anomaly detection worker (Phase 5)."""
     rows = await conn.fetch(
@@ -164,8 +170,8 @@ async def get_incidents(
 
 @router.get("/traces", response_model=list[TraceOut])
 async def get_traces(
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[TraceOut]:
     """
     Recent distributed traces assembled from the spans table.
@@ -227,7 +233,8 @@ async def get_traces(
                 start_time=max(0, span_start_ms - trace_start_ms),
                 duration=int(row["duration_ms"] or 0),
                 status="error" if (row["status_code"] and row["status_code"] >= 500) else "ok",
-                tags=dict(row["tags"] or {}),
+                # asyncpg returns JSONB as a string — parse it back to a dict.
+                tags=(json.loads(row["tags"]) if isinstance(row["tags"], str) else (row["tags"] or {})),
             )
         )
 
@@ -276,8 +283,8 @@ def _service_name(prefix: str) -> str:
 
 @router.get("/services", response_model=list[ServiceStatusOut])
 async def get_services(
-    project_id: str = Depends(authenticate_project),
-    conn: asyncpg.Connection = Depends(get_db),
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[ServiceStatusOut]:
     """
     Service health derived from route-prefix groups in event data.

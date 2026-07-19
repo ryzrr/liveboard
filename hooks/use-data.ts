@@ -11,6 +11,7 @@
 import { useMemo } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiMutate } from "@/lib/api-client";
+import { useProjects } from "@/components/providers/project-provider";
 import {
   generateChartData,
   getAlertRules,
@@ -188,14 +189,9 @@ export function useEndpoints(hours = 24) {
  */
 export function useTraces() {
   const mockTraces = useMemo(() => getTraces(), []);
-  const { data, loading } = useApiQuery<Trace[]>(
-    "/v1/traces",
-    {},
-    mockTraces,
-    toTraces,
-  );
-  // Empty spans table → real data is [] → keep mock so UI is never blank
-  return { data: data.length > 0 ? data : mockTraces, loading };
+  // Real project → shows real spans (empty when none). Only the no-project
+  // (landing) case falls back to the demo traces, handled inside useApiQuery.
+  return useApiQuery<Trace[]>("/v1/traces", {}, mockTraces, toTraces);
 }
 
 /** Service health derived from route-prefix groups — used by the status page. */
@@ -284,20 +280,22 @@ function toAlertHistory(raw: unknown): AlertHistoryEntry[] {
 
 /** Alert rules for the current project — with create/toggle helpers. */
 export function useAlertRules() {
+  const { activeProject } = useProjects();
+  const project = activeProject?.id;
   const fallback = useMemo(() => getAlertRules(), []);
   const query = useApiQuery<AlertRule[]>("/v1/alert-rules", {}, fallback, toAlertRules);
 
   async function createRule(payload: CreateAlertRulePayload): Promise<AlertRule> {
-    const raw = await apiMutate<ApiAlertRule>("POST", "/v1/alert-rules", payload);
+    const raw = await apiMutate<ApiAlertRule>("POST", "/v1/alert-rules", payload, project);
     return toAlertRule(raw);
   }
 
   async function toggleRule(id: string, enabled: boolean): Promise<void> {
-    await apiMutate("PATCH", `/v1/alert-rules/${id}`, { enabled });
+    await apiMutate("PATCH", `/v1/alert-rules/${id}`, { enabled }, project);
   }
 
   async function deleteRule(id: string): Promise<void> {
-    await apiMutate("DELETE", `/v1/alert-rules/${id}`);
+    await apiMutate("DELETE", `/v1/alert-rules/${id}`, undefined, project);
   }
 
   return { ...query, createRule, toggleRule, deleteRule };
