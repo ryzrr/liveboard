@@ -14,9 +14,14 @@ from api.deps import resolve_project_id, get_db, scoped_conn
 from api.schemas import (
     AlertHistoryOut,
     AlertRuleOut,
+    ChannelIn,
+    ChannelOut,
+    ChannelTestResponse,
+    ChannelUpdate,
     CreateAlertRuleRequest,
     UpdateAlertRuleRequest,
 )
+from core.notify import deliver
 
 router = APIRouter(prefix="/v1", tags=["alerts"])
 logger = logging.getLogger(__name__)
@@ -192,3 +197,110 @@ async def get_alert_history(
         )
         for row in rows
     ]
+
+
+# ─── Alert channels (real delivery targets) ──────────────────────────────────
+
+def _channel_row_to_out(row: asyncpg.Record) -> ChannelOut:
+    return ChannelOut(
+        id=str(row["id"]),
+        type=row["type"],
+        name=row["name"],
+        webhook_url=row["webhook_url"],
+        enabled=row["enabled"],
+        last_delivery_at=row["last_delivery_at"].isoformat() if row["last_delivery_at"] else None,
+        last_delivery_ok=row["last_delivery_ok"],
+        created_at=row["created_at"].isoformat() if row["created_at"] else "",
+    )
+
+
+@router.get("/channels", response_model=list[ChannelOut])
+async def list_channels(
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
+) -> list[ChannelOut]:
+    rows = await conn.fetch(
+        "SELECT * FROM alert_channels WHERE project_id = $1 ORDER BY created_at",
+        project_id,
+    )
+    return [_channel_row_to_out(r) for r in rows]
+
+
+@router.post("/channels", response_model=ChannelOut, status_code=201)
+async def create_channel(
+    body: ChannelIn,
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(get_db),
+) -> ChannelOut:
+    row = await conn.fetchrow(
+        """
+        INSERT INTO alert_channels (project_id, type, name, webhook_url, enabled)
+        VALUES ($1::uuid, $2, $3, $4, $5)
+        RETURNING *
+        """,
+        project_id, body.type, body.name, body.webhook_url, body.enabled,
+    )
+    return _channel_row_to_out(row)
+
+
+@router.patch("/channels/{channel_id}", response_model=ChannelOut)
+async def update_channel(
+    channel_id: str,
+    body: ChannelUpdate,
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(get_db),
+) -> ChannelOut:
+    row = await conn.fetchrow(
+        """
+        UPDATE alert_channels
+        SET name        = COALESCE($3, name),
+            webhook_url = COALESCE($4, webhook_url),
+            enabled     = COALESCE($5, enabled)
+        WHERE id = $1::uuid AND project_id = $2::uuid
+        RETURNING *
+        """,
+        channel_id, project_id, body.name, body.webhook_url, body.enabled,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    return _channel_row_to_out(row)
+
+
+@router.delete("/channels/{channel_id}", status_code=204, response_model=None, response_class=Response)
+async def delete_channel(
+    channel_id: str,
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(get_db),
+) -> Response:
+    result = await conn.execute(
+        "DELETE FROM alert_channels WHERE id = $1::uuid AND project_id = $2::uuid",
+        channel_id, project_id,
+    )
+    if result == "DELETE 0":
+        raise HTTPException(status_code=404, detail="Channel not found")
+    return Response(status_code=204)
+
+
+@router.post("/channels/{channel_id}/test", response_model=ChannelTestResponse)
+async def test_channel(
+    channel_id: str,
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(get_db),
+) -> ChannelTestResponse:
+    row = await conn.fetchrow(
+        "SELECT type, webhook_url FROM alert_channels WHERE id = $1::uuid AND project_id = $2::uuid",
+        channel_id, project_id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    ok, detail = await deliver(
+        row["type"], row["webhook_url"],
+        title="Liveboard test alert",
+        summary="This is a test message from Liveboard. If you can see this, delivery works.",
+        severity="info",
+    )
+    await conn.execute(
+        "UPDATE alert_channels SET last_delivery_at = now(), last_delivery_ok = $2 WHERE id = $1::uuid",
+        channel_id, ok,
+    )
+    return ChannelTestResponse(ok=ok, detail=detail)

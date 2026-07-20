@@ -188,3 +188,34 @@ class AlertHistoryOut(BaseModel):
     channel: str
     resolved: bool
     duration: str
+
+
+# ─── Alert channels (Phase: real alerting) ────────────────────────────────────
+
+class ChannelIn(BaseModel):
+    type: str = Field(..., pattern="^(slack|discord|pagerduty|webhook)$")
+    name: str = Field(..., min_length=1, max_length=100)
+    webhook_url: Optional[str] = Field(default=None, max_length=1000)
+    enabled: bool = True
+
+
+class ChannelUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=100)
+    webhook_url: Optional[str] = Field(default=None, max_length=1000)
+    enabled: Optional[bool] = None
+
+
+class ChannelOut(BaseModel):
+    id: str
+    type: str
+    name: str
+    webhook_url: Optional[str]
+    enabled: bool
+    last_delivery_at: Optional[str]
+    last_delivery_ok: Optional[bool]
+    created_at: str
+
+
+class ChannelTestResponse(BaseModel):
+    ok: bool
+    detail: str

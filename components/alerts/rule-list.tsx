@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Zap, Bell, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { timeAgo, cn } from "@/lib/utils";
@@ -33,7 +33,10 @@ const SEVERITY_ICONS = {
 };
 
 export function RuleList({ rules, onToggle }: RuleListProps) {
+  // Optimistic copy for instant toggle feedback — re-synced whenever the real
+  // rules prop changes (e.g. project switch, or empty when there are none).
   const [localRules, setLocalRules] = useState(rules);
+  useEffect(() => { setLocalRules(rules); }, [rules]);
 
   const toggle = (id: string) => {
     const rule = localRules.find((r) => r.id === id);

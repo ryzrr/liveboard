@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { useProjects } from "@/components/providers/project-provider";
 
+// Stable empty-array reference for the "real project, no data" state — reused
+// across renders so consumers depending on the result don't see a new [] each
+// render (which would loop any effect keyed on it).
+const EMPTY_LIST: readonly never[] = [];
+
 /**
  * Generic hook for REST API data.
  * - Shows `fallback` (mock) while loading or on error.
@@ -90,8 +95,10 @@ export function useApiQuery<T>(
   // Honesty rule: a REAL project never shows the demo `fallback`. While loading
   // or on error it shows an empty result (empty state), not fabricated data.
   // The demo `fallback` is only used when there's no project (landing / loading).
-  const emptyFallback = (Array.isArray(fallback) ? ([] as unknown as T) : fallback);
-  const effectiveFallback = projectId ? emptyFallback : fallback;
+  // Use the shared EMPTY_LIST so the reference is stable across renders.
+  const effectiveFallback = projectId
+    ? (Array.isArray(fallback) ? (EMPTY_LIST as unknown as T) : fallback)
+    : fallback;
 
   return { data: data ?? effectiveFallback, loading, refetch };
 }

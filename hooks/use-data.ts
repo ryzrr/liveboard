@@ -283,7 +283,8 @@ export function useAlertRules() {
   const { activeProject } = useProjects();
   const project = activeProject?.id;
   const fallback = useMemo(() => getAlertRules(), []);
-  const query = useApiQuery<AlertRule[]>("/v1/alert-rules", {}, fallback, toAlertRules);
+  // Poll so a rule flipping to "firing" (by the evaluation worker) shows up live.
+  const query = useApiQuery<AlertRule[]>("/v1/alert-rules", {}, fallback, toAlertRules, 15_000);
 
   async function createRule(payload: CreateAlertRulePayload): Promise<AlertRule> {
     const raw = await apiMutate<ApiAlertRule>("POST", "/v1/alert-rules", payload, project);
@@ -304,5 +305,81 @@ export function useAlertRules() {
 /** Alert firing history for the current project. */
 export function useAlertHistory() {
   const fallback = useMemo((): AlertHistoryEntry[] => [], []);
-  return useApiQuery<AlertHistoryEntry[]>("/v1/alert-history", {}, fallback, toAlertHistory);
+  return useApiQuery<AlertHistoryEntry[]>("/v1/alert-history", {}, fallback, toAlertHistory, 15_000);
+}
+
+// ─── Alert channels (real delivery targets) ──────────────────────────────────
+
+export interface AlertChannel {
+  id: string;
+  type: "slack" | "discord" | "pagerduty" | "webhook";
+  name: string;
+  webhookUrl: string | null;
+  enabled: boolean;
+  lastDeliveryAt: Date | null;
+  lastDeliveryOk: boolean | null;
+}
+
+interface ApiChannel {
+  id: string;
+  type: string;
+  name: string;
+  webhook_url: string | null;
+  enabled: boolean;
+  last_delivery_at: string | null;
+  last_delivery_ok: boolean | null;
+}
+
+function toChannel(r: ApiChannel): AlertChannel {
+  return {
+    id: r.id,
+    type: r.type as AlertChannel["type"],
+    name: r.name,
+    webhookUrl: r.webhook_url,
+    enabled: r.enabled,
+    lastDeliveryAt: r.last_delivery_at ? new Date(r.last_delivery_at) : null,
+    lastDeliveryOk: r.last_delivery_ok,
+  };
+}
+
+export interface CreateChannelPayload {
+  type: AlertChannel["type"];
+  name: string;
+  webhook_url: string;
+  enabled?: boolean;
+}
+
+/** Real alert delivery channels for the current project. */
+export function useChannels() {
+  const { activeProject } = useProjects();
+  const project = activeProject?.id;
+  const fallback = useMemo<AlertChannel[]>(() => [], []);
+  const query = useApiQuery<AlertChannel[]>(
+    "/v1/channels",
+    {},
+    fallback,
+    (raw) => (raw as ApiChannel[]).map(toChannel),
+    15_000,
+  );
+
+  async function createChannel(input: CreateChannelPayload): Promise<AlertChannel> {
+    const raw = await apiMutate<ApiChannel>("POST", "/v1/channels", input, project);
+    query.refetch();
+    return toChannel(raw);
+  }
+  async function updateChannel(id: string, patch: Partial<CreateChannelPayload>): Promise<void> {
+    await apiMutate("PATCH", `/v1/channels/${id}`, patch, project);
+    query.refetch();
+  }
+  async function deleteChannel(id: string): Promise<void> {
+    await apiMutate("DELETE", `/v1/channels/${id}`, undefined, project);
+    query.refetch();
+  }
+  async function testChannel(id: string): Promise<{ ok: boolean; detail: string }> {
+    const res = await apiMutate<{ ok: boolean; detail: string }>("POST", `/v1/channels/${id}/test`, {}, project);
+    query.refetch();
+    return res;
+  }
+
+  return { ...query, createChannel, updateChannel, deleteChannel, testChannel };
 }

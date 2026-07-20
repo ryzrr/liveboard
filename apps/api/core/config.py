@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     # ── AI (Phase 5 — Cerebras) ───────────────────────────────────────────────
     cerebras_api_key: SecretStr = SecretStr("")
+    # Model id must be one your key can access (see `client.models.list()`).
+    cerebras_model: str = "gpt-oss-120b"
 
     # ── CORS / realtime origins (Phase 8.5) ──────────────────────────────────
     # Comma-separated list of allowed browser origins (dashboard + status page).
