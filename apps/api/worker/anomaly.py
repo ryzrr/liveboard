@@ -125,7 +125,10 @@ async def _check_project(project_id: str, conn, redis) -> None:
 
         z_score = (current - mean) / stddev
 
-        if abs(z_score) <= _ZSCORE_THRESHOLD:
+        # Only INCREASES matter for these "higher = worse" metrics. A drop in
+        # error rate or p99 latency is an improvement, not an incident — never
+        # page someone because things got better.
+        if z_score <= _ZSCORE_THRESHOLD:
             continue
 
         logger.info(
@@ -198,7 +201,7 @@ async def _handle_anomaly(
     )
 
     # 5. Build incident fields
-    severity   = "critical" if abs(z_score) > 4.0 else "warning"
+    severity   = "critical" if z_score > 4.0 else "warning"
     title      = _anomaly_title(metric, current, z_score, unit)
     top_route  = (
         f"{context_rows[0]['method']} {context_rows[0]['route']}"
@@ -263,24 +266,27 @@ async def _generate_summary(
     ] or ["  No recent traffic data available"]
 
     prompt = (
-        f"An API anomaly was detected. Write a 2-3 sentence plain-English incident summary.\n\n"
+        f"You are an SRE assistant. An API anomaly was detected. Write a tight "
+        f"incident briefing for the on-call engineer.\n\n"
         f"Anomaly:\n"
         f"  Metric: {metric_label}\n"
         f"  Current value: {current:.1f}{unit}\n"
         f"  Normal range: {mean:.1f} ± {stddev:.1f}{unit}\n"
-        f"  Z-score: {z_score:.1f} (threshold ±3.0)\n\n"
+        f"  Z-score: {z_score:.1f} (threshold +3.0; the metric spiked ABOVE normal)\n\n"
         f"Recent traffic (last 10 min):\n"
         + "\n".join(context_lines)
-        + "\n\nBe concise and direct. Identify what changed, which endpoints are "
-        "affected, and the likely cause if visible from the data. No markdown, "
-        "no bullet points, no headers."
+        + "\n\nIn 3-4 sentences, plain prose (no markdown, no bullets, no headers): "
+        "(1) state what changed and by how much, (2) name the specific endpoint(s) "
+        "most likely responsible from the traffic above, (3) give the most likely "
+        "cause, and (4) recommend one concrete next step the engineer should take "
+        "right now."
     )
 
     try:
         response = await client.chat.completions.create(
-            model="llama-3.3-70b",
+            model=settings.cerebras_model,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
+            max_tokens=260,
         )
         return response.choices[0].message.content.strip()
     except Exception as exc:

@@ -9,6 +9,7 @@ import { ServiceMap } from "@/components/traces/service-map";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatMs, timeAgo } from "@/lib/utils";
 import { useTraces } from "@/hooks/use-data";
+import { useProjects } from "@/components/providers/project-provider";
 import type { Trace, TraceSpan } from "@/lib/types";
 
 type DurationFilter = "any" | "<100" | "100-500" | "500-1000" | ">1000";
@@ -34,6 +35,7 @@ function matchesDuration(ms: number, filter: DurationFilter): boolean {
 type ViewMode = "flamegraph" | "servicemap";
 
 export default function TracesPage() {
+  const { activeProject } = useProjects();
   const { data: traces } = useTraces();
   const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
 
@@ -62,7 +64,7 @@ export default function TracesPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Topbar breadcrumb={[{ label: "Projects" }, { label: "My API" }, { label: "Traces" }]} />
+      <Topbar breadcrumb={[{ label: "Projects" }, { label: activeProject?.name ?? "—" }, { label: "Traces" }]} />
 
       <div className="flex flex-1 gap-0">
         {/* Trace list */}

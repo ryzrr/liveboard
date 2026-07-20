@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTimeRange } from "@/hooks/use-time-range";
 import { useEndpoints } from "@/hooks/use-data";
+import { useProjects } from "@/components/providers/project-provider";
 import type { Endpoint } from "@/lib/types";
 
 const METHODS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"] as const;
@@ -22,6 +23,7 @@ const STATUS_RANGES = [
 ] as const;
 
 export default function EndpointsPage() {
+  const { activeProject } = useProjects();
   const { range, setRange } = useTimeRange("24h");
   const [selected, setSelected] = useState<Endpoint | null>(null);
   const [search, setSearch] = useState("");
@@ -97,7 +99,7 @@ export default function EndpointsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Topbar
-        breadcrumb={[{ label: "Projects" }, { label: "My API" }, { label: "Endpoints" }]}
+        breadcrumb={[{ label: "Projects" }, { label: activeProject?.name ?? "—" }, { label: "Endpoints" }]}
         actions={<TimeRangePicker value={range} onChange={setRange} />}
       />
 
