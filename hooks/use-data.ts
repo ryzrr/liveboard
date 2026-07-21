@@ -5,21 +5,13 @@
  * Each hook:
  *   1. Fetches real data from the API.
  *   2. Transforms snake_case backend response to camelCase frontend types.
- *   3. Falls back to mock data while loading or if the API is unreachable.
+ *   3. Shows an honest empty result while loading or if the API is
+ *      unreachable — never fabricated data (see EMPTY_LIST in use-api-query).
  */
 
-import { useMemo } from "react";
-import { useApiQuery } from "@/hooks/use-api-query";
+import { useApiQuery, EMPTY_LIST } from "@/hooks/use-api-query";
 import { apiMutate } from "@/lib/api-client";
 import { useProjects } from "@/components/providers/project-provider";
-import {
-  generateChartData,
-  getAlertRules,
-  getEndpoints,
-  getIncidents,
-  getServiceStatuses,
-  getTraces,
-} from "@/lib/mock-data";
 import type {
   AlertRule,
   ChartData,
@@ -156,11 +148,10 @@ function toServices(raw: unknown): ServiceStatus[] {
 
 /** Request-volume and status-code breakdown for the overview charts. Polls every 30 s. */
 export function useChartData(hours: number) {
-  const fallback = useMemo(() => generateChartData(hours), [hours]);
   return useApiQuery<ChartData[]>(
     "/v1/metrics/timeseries",
     { hours: String(hours) },
-    fallback,
+    EMPTY_LIST as unknown as ChartData[],
     undefined,
     30_000,
   );
@@ -168,36 +159,32 @@ export function useChartData(hours: number) {
 
 /** AI-detected incidents — polls every 60 s (matches anomaly worker cadence). */
 export function useIncidents() {
-  const fallback = useMemo(() => getIncidents(), []);
-  return useApiQuery<Incident[]>("/v1/incidents", {}, fallback, toIncidents, 60_000);
+  return useApiQuery<Incident[]>("/v1/incidents", {}, EMPTY_LIST as unknown as Incident[], toIncidents, 60_000);
 }
 
 /** Per-route aggregate stats for the endpoints explorer. */
 export function useEndpoints(hours = 24) {
-  const fallback = useMemo(() => getEndpoints(), []);
   return useApiQuery<Endpoint[]>(
     "/v1/endpoints",
     { hours: String(hours) },
-    fallback,
+    EMPTY_LIST as unknown as Endpoint[],
     toEndpoints,
   );
 }
 
-/**
- * Distributed traces from the spans table.
- * Falls back to mock data while spans table is empty (pre-Phase 6).
- */
-export function useTraces() {
-  const mockTraces = useMemo(() => getTraces(), []);
-  // Real project → shows real spans (empty when none). Only the no-project
-  // (landing) case falls back to the demo traces, handled inside useApiQuery.
-  return useApiQuery<Trace[]>("/v1/traces", {}, mockTraces, toTraces);
+/** Distributed traces from the spans table. */
+export function useTraces(hours = 24) {
+  return useApiQuery<Trace[]>(
+    "/v1/traces",
+    { hours: String(hours) },
+    EMPTY_LIST as unknown as Trace[],
+    toTraces,
+  );
 }
 
 /** Service health derived from route-prefix groups — used by the status page. */
 export function useServices() {
-  const fallback = useMemo(() => getServiceStatuses(), []);
-  return useApiQuery<ServiceStatus[]>("/v1/services", {}, fallback, toServices);
+  return useApiQuery<ServiceStatus[]>("/v1/services", {}, EMPTY_LIST as unknown as ServiceStatus[], toServices, 30_000);
 }
 
 // ─── Alert rules ─────────────────────────────────────────────────────────────
@@ -282,9 +269,10 @@ function toAlertHistory(raw: unknown): AlertHistoryEntry[] {
 export function useAlertRules() {
   const { activeProject } = useProjects();
   const project = activeProject?.id;
-  const fallback = useMemo(() => getAlertRules(), []);
   // Poll so a rule flipping to "firing" (by the evaluation worker) shows up live.
-  const query = useApiQuery<AlertRule[]>("/v1/alert-rules", {}, fallback, toAlertRules, 15_000);
+  const query = useApiQuery<AlertRule[]>(
+    "/v1/alert-rules", {}, EMPTY_LIST as unknown as AlertRule[], toAlertRules, 15_000,
+  );
 
   async function createRule(payload: CreateAlertRulePayload): Promise<AlertRule> {
     const raw = await apiMutate<ApiAlertRule>("POST", "/v1/alert-rules", payload, project);
@@ -304,8 +292,9 @@ export function useAlertRules() {
 
 /** Alert firing history for the current project. */
 export function useAlertHistory() {
-  const fallback = useMemo((): AlertHistoryEntry[] => [], []);
-  return useApiQuery<AlertHistoryEntry[]>("/v1/alert-history", {}, fallback, toAlertHistory, 15_000);
+  return useApiQuery<AlertHistoryEntry[]>(
+    "/v1/alert-history", {}, EMPTY_LIST as unknown as AlertHistoryEntry[], toAlertHistory, 15_000,
+  );
 }
 
 // ─── Alert channels (real delivery targets) ──────────────────────────────────
@@ -353,11 +342,10 @@ export interface CreateChannelPayload {
 export function useChannels() {
   const { activeProject } = useProjects();
   const project = activeProject?.id;
-  const fallback = useMemo<AlertChannel[]>(() => [], []);
   const query = useApiQuery<AlertChannel[]>(
     "/v1/channels",
     {},
-    fallback,
+    EMPTY_LIST as unknown as AlertChannel[],
     (raw) => (raw as ApiChannel[]).map(toChannel),
     15_000,
   );

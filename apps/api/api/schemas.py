@@ -52,10 +52,10 @@ class ProjectResponse(BaseModel):
 
 class TimeseriesPoint(BaseModel):
     time: str
-    requests: int
-    errors2xx: int
-    errors4xx: int
-    errors5xx: int
+    requests: float   # per-minute rate, normalized by bucket width — never a raw bucket count
+    errors2xx: float
+    errors4xx: float
+    errors5xx: float
     p99: float
 
 

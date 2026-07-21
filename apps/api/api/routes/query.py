@@ -33,31 +33,65 @@ async def get_timeseries(
     project_id: str = Depends(resolve_project_id),
     conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[TimeseriesPoint]:
-    """Request volume and status-code breakdown bucketed over time."""
+    """
+    Request volume and status-code breakdown bucketed over time.
+
+    Counts are normalized to a per-minute rate (divided by bucket width) —
+    the bucket width varies with `hours` (5 min / 15 min / 1 hr) so a raw
+    per-bucket count would jump ~12x just from switching the time range,
+    with no actual traffic change.
+
+    Buckets are generated for the *entire* requested range up front (via
+    generate_series) and left-joined against the real data, rather than only
+    returning rows where traffic happened. Otherwise a quiet stretch — no
+    events for hours — simply has no rows, and the chart draws a straight
+    line connecting the points either side of the gap as if it were one
+    smooth, continuous step. Zero-filling makes a real gap look like a gap.
+
+    `time` is returned as a raw ISO 8601 UTC instant, not a pre-formatted
+    string — this endpoint has no idea what timezone the viewer is in, so
+    formatting here would silently bake in the server's UTC clock. The
+    frontend formats it in the viewer's local timezone, same as every other
+    timestamp in the app (live log, incidents, etc.).
+    """
     # asyncpg encodes interval params from datetime.timedelta (not str).
-    bucket = (
-        datetime.timedelta(minutes=5) if hours <= 6
-        else datetime.timedelta(minutes=15) if hours <= 24
-        else datetime.timedelta(hours=1)
-    )
-    fmt = "%H:%M" if hours <= 24 else "%b %d"
+    bucket_minutes = 5 if hours <= 6 else 15 if hours <= 24 else 60
+    bucket = datetime.timedelta(minutes=bucket_minutes)
 
     rows = await conn.fetch(
         """
+        WITH buckets AS (
+            SELECT generate_series(
+                time_bucket($1, now() - ($3 * INTERVAL '1 hour')),
+                time_bucket($1, now()),
+                $1
+            ) AS t
+        ),
+        agg AS (
+            SELECT
+                time_bucket($1, time)                                                    AS t,
+                COUNT(*)::int                                                             AS requests,
+                SUM(CASE WHEN status_code < 400               THEN 1 ELSE 0 END)::int   AS req_2xx,
+                SUM(CASE WHEN status_code BETWEEN 400 AND 499 THEN 1 ELSE 0 END)::int   AS req_4xx,
+                SUM(CASE WHEN status_code >= 500              THEN 1 ELSE 0 END)::int   AS req_5xx,
+                COALESCE(
+                    PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms), 0
+                )::float                                                                  AS p99
+            FROM events
+            WHERE project_id = $2
+              AND time >= now() - ($3 * INTERVAL '1 hour')
+            GROUP BY t
+        )
         SELECT
-            time_bucket($1, time)                                                    AS t,
-            COUNT(*)::int                                                             AS requests,
-            SUM(CASE WHEN status_code < 400               THEN 1 ELSE 0 END)::int   AS req_2xx,
-            SUM(CASE WHEN status_code BETWEEN 400 AND 499 THEN 1 ELSE 0 END)::int   AS req_4xx,
-            SUM(CASE WHEN status_code >= 500              THEN 1 ELSE 0 END)::int   AS req_5xx,
-            COALESCE(
-                PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms), 0
-            )::float                                                                  AS p99
-        FROM events
-        WHERE project_id = $2
-          AND time >= now() - ($3 * INTERVAL '1 hour')
-        GROUP BY t
-        ORDER BY t
+            b.t,
+            COALESCE(a.requests, 0) AS requests,
+            COALESCE(a.req_2xx, 0)  AS req_2xx,
+            COALESCE(a.req_4xx, 0)  AS req_4xx,
+            COALESCE(a.req_5xx, 0)  AS req_5xx,
+            COALESCE(a.p99, 0)      AS p99
+        FROM buckets b
+        LEFT JOIN agg a ON a.t = b.t
+        ORDER BY b.t
         """,
         bucket,
         project_id,
@@ -66,11 +100,11 @@ async def get_timeseries(
 
     return [
         TimeseriesPoint(
-            time=row["t"].strftime(fmt),
-            requests=row["requests"],
-            errors2xx=row["req_2xx"],
-            errors4xx=row["req_4xx"],
-            errors5xx=row["req_5xx"],
+            time=row["t"].isoformat(),
+            requests=round(row["requests"] / bucket_minutes, 1),
+            errors2xx=round(row["req_2xx"] / bucket_minutes, 1),
+            errors4xx=round(row["req_4xx"] / bucket_minutes, 1),
+            errors5xx=round(row["req_5xx"] / bucket_minutes, 1),
             p99=round(row["p99"], 1),
         )
         for row in rows
@@ -136,12 +170,9 @@ async def get_endpoints(
 
 # ─── Incidents ───────────────────────────────────────────────────────────────
 
-@router.get("/incidents", response_model=list[IncidentOut])
-async def get_incidents(
-    project_id: str = Depends(resolve_project_id),
-    conn: asyncpg.Connection = Depends(scoped_conn),
-) -> list[IncidentOut]:
-    """Recent incidents from the AI anomaly detection worker (Phase 5)."""
+async def fetch_incidents(conn: asyncpg.Connection, project_id: str) -> list[IncidentOut]:
+    """Recent incidents from the AI anomaly detection worker (Phase 5). Shared by the
+    authenticated dashboard route and the public status-page route."""
     rows = await conn.fetch(
         """
         SELECT id, severity, title, summary, endpoint, resolved, created_at
@@ -166,16 +197,28 @@ async def get_incidents(
     ]
 
 
+@router.get("/incidents", response_model=list[IncidentOut])
+async def get_incidents(
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
+) -> list[IncidentOut]:
+    return await fetch_incidents(conn, project_id)
+
+
 # ─── Traces ──────────────────────────────────────────────────────────────────
 
 @router.get("/traces", response_model=list[TraceOut])
 async def get_traces(
+    hours: int = Query(24, ge=1, le=168),
     project_id: str = Depends(resolve_project_id),
     conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[TraceOut]:
     """
-    Recent distributed traces assembled from the spans table.
-    Returns an empty list until Phase 6 (span ingest) is wired up.
+    Recent distributed traces assembled from the spans table, within the
+    last `hours` (default 24, matching Endpoints/Overview's picker). This
+    used to hardcode 24h with no way to widen it and no indication to the
+    viewer that a window even existed — a project with real spans older than
+    a day would just show an empty page with no explanation.
     """
     rows = await conn.fetch(
         """
@@ -183,7 +226,7 @@ async def get_traces(
             SELECT DISTINCT trace_id
             FROM spans
             WHERE project_id = $1
-              AND start_time >= now() - INTERVAL '24 hours'
+              AND start_time >= now() - ($2 * INTERVAL '1 hour')
             LIMIT 20
         )
         SELECT
@@ -205,6 +248,7 @@ async def get_traces(
         ORDER BY trace_start DESC, s.start_time
         """,
         project_id,
+        hours,
     )
 
     # Group spans into traces
@@ -281,14 +325,11 @@ def _service_name(prefix: str) -> str:
     return _map.get(segment, prefix or "API")
 
 
-@router.get("/services", response_model=list[ServiceStatusOut])
-async def get_services(
-    project_id: str = Depends(resolve_project_id),
-    conn: asyncpg.Connection = Depends(scoped_conn),
-) -> list[ServiceStatusOut]:
+async def fetch_services(conn: asyncpg.Connection, project_id: str) -> list[ServiceStatusOut]:
     """
     Service health derived from route-prefix groups in event data.
     Uptime bars represent up to 90 days; missing days default to 'up'.
+    Shared by the authenticated dashboard route and the public status-page route.
     """
     rows = await conn.fetch(
         """
@@ -365,3 +406,11 @@ async def get_services(
         )
 
     return result[:10]
+
+
+@router.get("/services", response_model=list[ServiceStatusOut])
+async def get_services(
+    project_id: str = Depends(resolve_project_id),
+    conn: asyncpg.Connection = Depends(scoped_conn),
+) -> list[ServiceStatusOut]:
+    return await fetch_services(conn, project_id)

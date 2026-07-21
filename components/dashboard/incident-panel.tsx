@@ -51,12 +51,12 @@ function IncidentCard({ incident }: { incident: Incident }) {
             )}
           </div>
           <p className="text-xs font-medium text-[#F5F5F5] leading-snug">{incident.title}</p>
-          <p className="text-[10px] text-[#444] mt-0.5 font-mono">{timeAgo(incident.timestamp)}</p>
+          <p className="text-[10px] text-[#808080] mt-0.5 font-mono">{timeAgo(incident.timestamp)}</p>
         </div>
         {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-[#444] flex-shrink-0 mt-1" />
+          <ChevronDown className="h-3.5 w-3.5 text-[#808080] flex-shrink-0 mt-1" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-[#444] flex-shrink-0 mt-1" />
+          <ChevronRight className="h-3.5 w-3.5 text-[#808080] flex-shrink-0 mt-1" />
         )}
       </button>
 
@@ -72,7 +72,7 @@ function IncidentCard({ incident }: { incident: Incident }) {
             <div className="px-3 pb-3 border-t border-[#1E1E1E]/50">
               <p className="text-xs text-[#888] mt-2.5 leading-relaxed">{incident.summary}</p>
               <div className="flex items-center gap-1.5 mt-2">
-                <span className="text-[10px] text-[#444]">Affected:</span>
+                <span className="text-[10px] text-[#808080]">Affected:</span>
                 <span className="text-[10px] font-mono text-blue">{incident.endpoint}</span>
               </div>
             </div>
@@ -104,7 +104,7 @@ export function IncidentPanel({ incidents }: IncidentPanelProps) {
         ))}
         {resolved.length > 0 && (
           <>
-            <p className="text-[10px] text-[#333] uppercase tracking-wider px-1 pt-1">Resolved</p>
+            <p className="text-[10px] text-[#808080] uppercase tracking-wider px-1 pt-1">Resolved</p>
             {resolved.map((i) => (
               <IncidentCard key={i.id} incident={i} />
             ))}

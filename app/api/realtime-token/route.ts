@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { verifyProjectAccess } from "@/lib/project-access";
 
 // Mints a short-lived, project-scoped realtime token for the browser's
-// Socket.io / SSE connections — only after verifying the signed-in user is a
-// member of the requested project. The browser never holds an API key.
+// Socket.io / SSE connections — only after verifying (fresh, not cached —
+// see lib/project-access.ts) the signed-in user is a member of the
+// requested project. The browser never holds an API key.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 function internalToken(): string {
@@ -17,7 +19,7 @@ export async function GET(req: Request) {
 
   const project = new URL(req.url).searchParams.get("project");
   if (!project) return NextResponse.json({ error: "missing_project" }, { status: 400 });
-  if (!session.projectIds?.includes(project)) {
+  if (!(await verifyProjectAccess(email, project))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

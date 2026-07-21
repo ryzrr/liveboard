@@ -55,9 +55,9 @@ export function UserMenu() {
         className="flex items-center gap-2.5 px-2.5 py-1.5 rounded hover:bg-[#161616] transition-colors"
       >
         <div className="h-5 w-5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] flex items-center justify-center">
-          <span className="text-[9px] text-[#555]">?</span>
+          <span className="text-[9px] text-[#949494]">?</span>
         </div>
-        <span className="text-xs font-medium text-[#555]">Sign in</span>
+        <span className="text-xs font-medium text-[#949494]">Sign in</span>
       </Link>
     );
   }
@@ -71,7 +71,7 @@ export function UserMenu() {
           <Avatar name={name} image={image} />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-[#F5F5F5] truncate">{name ?? "User"}</p>
-            <p className="text-[10px] text-[#555] truncate">{email}</p>
+            <p className="text-[10px] text-[#949494] truncate">{email}</p>
           </div>
         </button>
       </DropdownMenu.Trigger>
@@ -86,7 +86,7 @@ export function UserMenu() {
           {/* User info header */}
           <div className="px-2 py-2 mb-1 border-b border-[#1E1E1E]">
             <p className="text-xs font-semibold text-[#F5F5F5] truncate">{name}</p>
-            <p className="text-[10px] text-[#444] truncate">{email}</p>
+            <p className="text-[10px] text-[#808080] truncate">{email}</p>
           </div>
 
           <DropdownMenu.Item asChild>

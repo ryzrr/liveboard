@@ -30,7 +30,7 @@ export function EndpointTable({ endpoints, onSelect, selected, compareSelected =
 
   const SortBtn = ({ k, label }: { k: SortKey; label: string }) => (
     <button
-      className="flex items-center gap-1 text-[10px] font-medium text-[#444] uppercase tracking-wider hover:text-[#888] transition-colors"
+      className="flex items-center gap-1 text-[10px] font-medium text-[#808080] uppercase tracking-wider hover:text-[#888] transition-colors"
       onClick={() => toggleSort(k)}
     >
       {label}
@@ -42,13 +42,13 @@ export function EndpointTable({ endpoints, onSelect, selected, compareSelected =
     <div className="rounded-lg border border-[#1E1E1E] bg-[#111111] overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_80px_36px] gap-2 px-4 py-2.5 border-b border-[#1E1E1E]">
-        <span className="text-[10px] font-medium text-[#444] uppercase tracking-wider">Endpoint</span>
+        <span className="text-[10px] font-medium text-[#808080] uppercase tracking-wider">Endpoint</span>
         <SortBtn k="requests24h" label="Requests 24h" />
         <SortBtn k="errorRate" label="Error Rate" />
         <SortBtn k="p50" label="p50" />
         <SortBtn k="p95" label="p95" />
         <SortBtn k="p99" label="p99" />
-        <span className="text-[10px] font-medium text-[#444] uppercase tracking-wider">Health</span>
+        <span className="text-[10px] font-medium text-[#808080] uppercase tracking-wider">Health</span>
         <span />
       </div>
 
@@ -100,9 +100,14 @@ export function EndpointTable({ endpoints, onSelect, selected, compareSelected =
               </span>
             </div>
 
-            <ChevronRight className="h-3.5 w-3.5 text-[#333]" />
+            <ChevronRight className="h-3.5 w-3.5 text-[#808080]" />
           </button>
         ))}
+        {sorted.length === 0 && (
+          <div className="p-6 text-center text-[10px] text-[#808080]">
+            No endpoints have received traffic in this range yet.
+          </div>
+        )}
       </div>
     </div>
   );

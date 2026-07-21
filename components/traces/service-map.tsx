@@ -107,7 +107,7 @@ export function ServiceMap({ trace }: ServiceMapProps) {
 
   return (
     <div className="rounded-lg border border-[#1E1E1E] bg-[#111] p-4">
-      <p className="text-[10px] text-[#444] uppercase tracking-wider mb-3">Service Map</p>
+      <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-3">Service Map</p>
       <div className="flex items-center justify-center">
         <svg width={W} height={H} className="overflow-visible">
           <defs>
@@ -136,7 +136,7 @@ export function ServiceMap({ trace }: ServiceMapProps) {
                     y={(fromNode.y + toNode.y) / 2 - 6}
                     textAnchor="middle"
                     fontSize={8}
-                    fill="#333"
+                    fill="#808080"
                     className="font-mono"
                   >
                     ×{edge.count}
@@ -205,7 +205,7 @@ export function ServiceMap({ trace }: ServiceMapProps) {
           return (
             <div key={node.service} className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px] text-[#444] font-mono">{node.service}</span>
+              <span className="text-[10px] text-[#808080] font-mono">{node.service}</span>
               {node.hasError && <span className="text-[10px] text-red">!</span>}
             </div>
           );

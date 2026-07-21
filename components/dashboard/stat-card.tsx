@@ -20,7 +20,7 @@ export function StatCardComponent({ card, sparkColor = "#378ADD" }: StatCardProp
     <div className="rounded-lg border border-[#1E1E1E] bg-[#111111] p-4 flex flex-col gap-3 hover:border-[#2A2A2A] transition-colors">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] font-medium text-[#555] uppercase tracking-wider mb-1">
+          <p className="text-[10px] font-medium text-[#949494] uppercase tracking-wider mb-1">
             {card.label}
           </p>
           <div className="flex items-baseline gap-1">
@@ -28,7 +28,7 @@ export function StatCardComponent({ card, sparkColor = "#378ADD" }: StatCardProp
               {card.value}
             </span>
             {card.unit && (
-              <span className="text-sm text-[#555] font-medium">{card.unit}</span>
+              <span className="text-sm text-[#949494] font-medium">{card.unit}</span>
             )}
           </div>
         </div>
@@ -54,7 +54,7 @@ export function StatCardComponent({ card, sparkColor = "#378ADD" }: StatCardProp
             {card.unit === "%" ? "pp" : card.unit === "ms" ? "ms" : "%"}
           </span>
         </div>
-        <span className="text-[10px] text-[#444]">{card.deltaLabel}</span>
+        <span className="text-[10px] text-[#808080]">{card.deltaLabel}</span>
       </div>
     </div>
   );

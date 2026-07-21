@@ -48,7 +48,7 @@ export function UptimeBar({ service }: UptimeBarProps) {
         </div>
         <div className="text-right">
           <p className="text-xs font-mono text-[#F5F5F5]">{service.uptime90d.toFixed(2)}%</p>
-          <p className="text-[10px] text-[#444]">uptime (90d)</p>
+          <p className="text-[10px] text-[#808080]">uptime (90d)</p>
         </div>
       </div>
 
@@ -67,8 +67,8 @@ export function UptimeBar({ service }: UptimeBarProps) {
         ))}
       </div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-[10px] text-[#333]">90 days ago</span>
-        <span className="text-[10px] text-[#333]">Today</span>
+        <span className="text-[10px] text-[#808080]">90 days ago</span>
+        <span className="text-[10px] text-[#808080]">Today</span>
       </div>
     </div>
   );

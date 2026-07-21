@@ -82,7 +82,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
           <Dialog.Close asChild>
             <button
               onClick={resetAndClose}
-              className="absolute right-4 top-4 rounded p-1 text-[#555] hover:text-[#888] hover:bg-[#1A1A1A] transition-colors outline-none"
+              className="absolute right-4 top-4 rounded p-1 text-[#949494] hover:text-[#888] hover:bg-[#1A1A1A] transition-colors outline-none"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -94,7 +94,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                 <Dialog.Title className="text-base font-semibold text-[#F5F5F5]">
                   Create project
                 </Dialog.Title>
-                <Dialog.Description className="mt-1 text-sm text-[#555]">
+                <Dialog.Description className="mt-1 text-sm text-[#949494]">
                   A project groups API keys, events, and alert rules.
                 </Dialog.Description>
               </div>
@@ -136,7 +136,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                 <Dialog.Title className="text-base font-semibold text-[#F5F5F5]">
                   API key created
                 </Dialog.Title>
-                <Dialog.Description className="mt-1 text-sm text-[#555]">
+                <Dialog.Description className="mt-1 text-sm text-[#949494]">
                   Copy your API key now — it will not be shown again.
                 </Dialog.Description>
               </div>
@@ -144,7 +144,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
               <div className="rounded-lg border border-[#2A2A2A] bg-[#0A0A0A] p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 min-w-0">
-                    <p className="text-[10px] text-[#444] font-medium uppercase tracking-wider">
+                    <p className="text-[10px] text-[#808080] font-medium uppercase tracking-wider">
                       {result.project.name}
                     </p>
                     <p className="font-mono text-xs text-[#F5F5F5] break-all leading-relaxed">
@@ -153,7 +153,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                   </div>
                   <button
                     onClick={copyKey}
-                    className="flex-shrink-0 p-2 rounded border border-[#2A2A2A] hover:border-[#333] bg-[#161616] hover:bg-[#1A1A1A] text-[#555] hover:text-[#888] transition-colors"
+                    className="flex-shrink-0 p-2 rounded border border-[#2A2A2A] hover:border-[#333] bg-[#161616] hover:bg-[#1A1A1A] text-[#949494] hover:text-[#888] transition-colors"
                     title="Copy API key"
                   >
                     {copied ? (
@@ -173,10 +173,10 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-xs text-[#555] font-medium">Quick start</p>
+                <p className="text-xs text-[#949494] font-medium">Quick start</p>
                 <div className="rounded border border-[#1E1E1E] bg-[#0A0A0A] p-3 font-mono text-[11px] text-[#888] leading-relaxed space-y-1">
-                  <p><span className="text-[#444]">npm install</span> liveboard</p>
-                  <p><span className="text-[#444]">LIVEBOARD_API_KEY=</span><span className="text-blue">{result.project.apiKeyMasked}</span></p>
+                  <p><span className="text-[#808080]">npm install</span> liveboard</p>
+                  <p><span className="text-[#808080]">LIVEBOARD_API_KEY=</span><span className="text-blue">{result.project.apiKeyMasked}</span></p>
                 </div>
               </div>
 
