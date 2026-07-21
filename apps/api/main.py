@@ -8,7 +8,7 @@ from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import alerts, ingest, internal, projects, query, spans
+from api.routes import alerts, ingest, internal, projects, public_status, query, spans
 from core.config import settings
 from core.database import close_pool, get_pool
 from core.redis_client import close_redis
@@ -70,6 +70,7 @@ _fastapi.include_router(internal.router)
 _fastapi.include_router(query.router)
 _fastapi.include_router(alerts.router)
 _fastapi.include_router(spans.router)
+_fastapi.include_router(public_status.router)
 _fastapi.include_router(sse_router)
 
 

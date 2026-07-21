@@ -1,7 +1,8 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus, Settings } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useProjects, type Project } from "@/components/providers/project-provider";
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
@@ -44,7 +45,7 @@ export function ProjectSwitcher() {
                 {activeProject?.name ?? "Select project"}
               </span>
             </div>
-            <ChevronDown className="h-3 w-3 text-[#555] group-hover:text-[#888] transition-colors flex-shrink-0" />
+            <ChevronDown className="h-3 w-3 text-[#949494] group-hover:text-[#888] transition-colors flex-shrink-0" />
           </button>
         </DropdownMenu.Trigger>
 
@@ -55,7 +56,7 @@ export function ProjectSwitcher() {
             align="start"
             sideOffset={4}
           >
-            <p className="px-2 py-1 text-[10px] text-[#444] font-medium uppercase tracking-wider">
+            <p className="px-2 py-1 text-[10px] text-[#808080] font-medium uppercase tracking-wider">
               Projects
             </p>
 
@@ -74,6 +75,19 @@ export function ProjectSwitcher() {
             ))}
 
             <DropdownMenu.Separator className="my-1 h-px bg-[#1E1E1E]" />
+
+            {activeProject && (
+              <DropdownMenu.Item asChild>
+                <Link
+                  href="/settings"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[#888] hover:text-[#F5F5F5] hover:bg-[#1A1A1A] outline-none cursor-pointer transition-colors"
+                >
+                  <Settings className="h-3 w-3" />
+                  Project settings
+                </Link>
+              </DropdownMenu.Item>
+            )}
 
             <DropdownMenu.Item
               onSelect={handleCreateClick}

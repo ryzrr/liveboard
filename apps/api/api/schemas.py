@@ -219,3 +219,32 @@ class ChannelOut(BaseModel):
 class ChannelTestResponse(BaseModel):
     ok: bool
     detail: str
+
+
+# ─── Public status page ───────────────────────────────────────────────────────
+
+class PublicStatusOut(BaseModel):
+    project_name: str
+    services: list[ServiceStatusOut]
+    incidents: list[IncidentOut]
+
+
+class SubscribeRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def _basic_shape(cls, v: str) -> str:
+        v = v.strip().lower()
+        if "@" not in v or " " in v or v.startswith("@") or v.endswith("@"):
+            raise ValueError("not a valid email address")
+        return v
+
+
+class SubscribeResponse(BaseModel):
+    ok: bool
+
+
+class SubscriptionStatusOut(BaseModel):
+    ok: bool
+    detail: str
