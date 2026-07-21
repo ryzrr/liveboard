@@ -54,6 +54,8 @@ class ProjectDetail(BaseModel):
     org_id: str
     api_key_masked: str
     created_at: str
+    status_page_enabled: bool
+    public_slug: str | None
 
 
 class ProvisionResponse(BaseModel):
@@ -76,6 +78,16 @@ class CreatedProjectResponse(BaseModel):
 class RotatedKeyResponse(BaseModel):
     project_id: str
     new_api_key: str
+
+
+class StatusPageToggleRequest(BaseModel):
+    email: str
+    enabled: bool
+
+
+class StatusPageSettingsResponse(BaseModel):
+    enabled: bool
+    public_slug: str | None
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -248,6 +260,7 @@ async def list_projects(
     rows = await db.fetch(
         """
         SELECT p.id, p.name, p.org_id, p.created_at,
+               p.status_page_enabled, p.public_slug,
                (SELECT k.prefix FROM api_keys k
                 WHERE k.project_id = p.id AND k.revoked_at IS NULL
                 ORDER BY k.created_at DESC LIMIT 1) AS prefix
@@ -266,6 +279,8 @@ async def list_projects(
             org_id=str(r["org_id"]),
             api_key_masked=_mask(r["prefix"]),
             created_at=r["created_at"].isoformat() if r["created_at"] else "",
+            status_page_enabled=r["status_page_enabled"],
+            public_slug=r["public_slug"],
         )
         for r in rows
     ]
@@ -314,6 +329,60 @@ async def rotate_key(
         # keep the legacy column in sync (nullable) so old fallback never wins with a stale key
         await db.execute("UPDATE projects SET api_key = NULL WHERE id = $1::uuid", project_id)
     return RotatedKeyResponse(project_id=project_id, new_api_key=raw)
+
+
+async def _generate_public_slug(db: asyncpg.Connection, name: str) -> str:
+    """A `_slugify(name)` base is not unique enough on its own — every new
+    signup defaults to a project named 'My API' (see _create_project below),
+    so append a short random suffix and retry on the rare collision."""
+    base = _slugify(name)
+    for _ in range(5):
+        candidate = f"{base}-{secrets.token_urlsafe(4).lower().rstrip('=-_')}"
+        exists = await db.fetchval("SELECT 1 FROM projects WHERE public_slug = $1", candidate)
+        if not exists:
+            return candidate
+    raise HTTPException(status_code=500, detail="Could not generate a unique status page slug")
+
+
+@router.patch("/projects/{project_id}/status-page", response_model=StatusPageSettingsResponse)
+async def set_status_page(
+    project_id: str,
+    body: StatusPageToggleRequest,
+    db: asyncpg.Connection = Depends(get_db),
+    _: None = Depends(authenticate_internal),
+) -> StatusPageSettingsResponse:
+    """
+    Enable/disable the public status page for a project. Enabling mints a
+    public_slug the first time only — disabling keeps it, so re-enabling
+    restores the same /status/{slug} link.
+    """
+    await _require_member(db, body.email, project_id)
+
+    if body.enabled:
+        row = await db.fetchrow(
+            "SELECT name, public_slug FROM projects WHERE id = $1::uuid", project_id
+        )
+        if row is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+        slug = row["public_slug"] or await _generate_public_slug(db, row["name"])
+        await db.execute(
+            "UPDATE projects SET status_page_enabled = TRUE, public_slug = $2 WHERE id = $1::uuid",
+            project_id,
+            slug,
+        )
+        return StatusPageSettingsResponse(enabled=True, public_slug=slug)
+
+    row = await db.fetchrow(
+        """
+        UPDATE projects SET status_page_enabled = FALSE
+        WHERE id = $1::uuid
+        RETURNING public_slug
+        """,
+        project_id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return StatusPageSettingsResponse(enabled=False, public_slug=row["public_slug"])
 
 
 class RealtimeTokenRequest(BaseModel):

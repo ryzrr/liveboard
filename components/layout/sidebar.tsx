@@ -72,7 +72,12 @@ export function Sidebar() {
       <div className="px-2 py-3 border-t border-[#1E1E1E] space-y-0.5">
         <Link
           href="/settings"
-          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-[#888888] hover:text-[#F5F5F5] hover:bg-[#161616] transition-colors border border-transparent"
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-1.5 rounded transition-colors duration-100 border",
+            pathname === "/settings" || pathname.startsWith("/settings/")
+              ? "bg-blue-dim text-blue border-blue-border"
+              : "text-[#888888] hover:text-[#F5F5F5] hover:bg-[#161616] border-transparent"
+          )}
         >
           <Settings className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">Settings</span>

@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     # Max events accepted per project per minute (fixed window). 0 = unlimited.
     ingest_rate_limit_per_min: int = 120_000
 
+    # ── Email (public status page subscriptions) ─────────────────────────────
+    # Resend API key for confirmation + incident-alert emails. Empty in dev —
+    # core.email.send() logs and no-ops instead of raising when unset.
+    resend_api_key: SecretStr = SecretStr("")
+    email_from: str = "Liveboard Status <status@liveboard.dev>"
+    # Public origin used to build confirm/unsubscribe links in emails.
+    public_app_url: str = "http://localhost:3000"
+
     # ── Environment ───────────────────────────────────────────────────────────
     environment: str = "development"
 

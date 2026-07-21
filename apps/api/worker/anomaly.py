@@ -21,6 +21,7 @@ from cerebras.cloud.sdk import AsyncCerebras
 
 from core.config import settings
 from core.database import get_pool
+from core.email import incident_email, send as send_email
 from core.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
@@ -239,6 +240,35 @@ async def _handle_anomaly(
     }
     await redis.publish(f"incidents:{project_id}", json.dumps(payload))
     logger.info("Incident created id=%s project=%s", row["id"], project_id)
+
+    await _notify_subscribers(conn, project_id, title, summary)
+
+
+async def _notify_subscribers(conn, project_id: str, title: str, summary: str) -> None:
+    """
+    Email confirmed, active status-page subscribers about a new incident.
+    Best-effort — a delivery failure must not break the anomaly loop, same as
+    the alert-channel worker's notify.deliver.
+    """
+    rows = await conn.fetch(
+        """
+        SELECT s.email, s.confirm_token, p.public_slug
+        FROM status_subscribers s
+        JOIN projects p ON p.id = s.project_id
+        WHERE s.project_id = $1 AND s.confirmed_at IS NOT NULL AND s.unsubscribed_at IS NULL
+        """,
+        project_id,
+    )
+    if not rows or not rows[0]["public_slug"]:
+        return
+
+    status_url = f"{settings.public_app_url}/status/{rows[0]['public_slug']}"
+    for row in rows:
+        unsubscribe_url = f"{settings.public_app_url}/status/unsubscribe/{row['confirm_token']}"
+        subject, html = incident_email(title, summary, status_url, unsubscribe_url)
+        ok, detail = await send_email(row["email"], subject, html)
+        if not ok:
+            logger.warning("Incident email to %s failed: %s", row["email"], detail)
 
 
 # ─── Cerebras summariser ─────────────────────────────────────────────────────
