@@ -50,7 +50,7 @@ export function RuleList({ rules, onToggle }: RuleListProps) {
     <div className="rounded-lg border border-[#1E1E1E] bg-[#111] overflow-hidden">
       <div className="grid grid-cols-[2fr_1fr_1fr_1fr_80px_40px] gap-3 px-4 py-2.5 border-b border-[#1E1E1E]">
         {["Rule", "Condition", "Channel", "Last Triggered", "Status", ""].map((h) => (
-          <span key={h} className="text-[10px] font-medium text-[#444] uppercase tracking-wider">
+          <span key={h} className="text-[10px] font-medium text-[#808080] uppercase tracking-wider">
             {h}
           </span>
         ))}
@@ -87,13 +87,13 @@ export function RuleList({ rules, onToggle }: RuleListProps) {
                 <span className="text-xs font-medium text-[#F5F5F5] truncate">{rule.name}</span>
               </div>
 
-              <span className="text-[10px] text-[#555] font-mono leading-tight">
+              <span className="text-[10px] text-[#949494] font-mono leading-tight">
                 {METRIC_LABELS[rule.metric]} {OPERATOR_LABELS[rule.operator]} {rule.threshold}{thresholdUnit} / {rule.window}min
               </span>
 
-              <span className="text-xs text-[#555]">{rule.channel}</span>
+              <span className="text-xs text-[#949494]">{rule.channel}</span>
 
-              <span className="text-xs text-[#444]">
+              <span className="text-xs text-[#808080]">
                 {rule.lastTriggered ? timeAgo(rule.lastTriggered) : "—"}
               </span>
 
@@ -126,6 +126,11 @@ export function RuleList({ rules, onToggle }: RuleListProps) {
             </div>
           );
         })}
+        {localRules.length === 0 && (
+          <div className="p-6 text-center text-[10px] text-[#808080]">
+            No alert rules yet — create one below.
+          </div>
+        )}
       </div>
     </div>
   );

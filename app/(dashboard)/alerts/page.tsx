@@ -84,11 +84,11 @@ function ChannelConfigForm({ channel, onSave, onTest, onDelete, onClose }: {
           <span className="text-lg">{CHANNEL_ICON[channel.type]}</span>
           <span className="text-sm font-medium text-[#F5F5F5]">{channel.name}</span>
         </div>
-        <button onClick={onClose} className="text-[#333] hover:text-[#666] text-xs">✕</button>
+        <button onClick={onClose} className="text-[#808080] hover:text-[#949494] text-xs">✕</button>
       </div>
 
       <div>
-        <label className="text-[10px] text-[#444] uppercase tracking-wider">
+        <label className="text-[10px] text-[#808080] uppercase tracking-wider">
           {channel.type === "pagerduty" ? "Routing key" : "Webhook URL"}
         </label>
         <input
@@ -111,7 +111,7 @@ function ChannelConfigForm({ channel, onSave, onTest, onDelete, onClose }: {
       )}
 
       {channel.lastDeliveryAt && (
-        <p className="text-[10px] text-[#333]">
+        <p className="text-[10px] text-[#808080]">
           Last delivery: {timeAgo(channel.lastDeliveryAt)} ·{" "}
           <span className={channel.lastDeliveryOk ? "text-green" : "text-red"}>
             {channel.lastDeliveryOk ? "OK" : "Failed"}
@@ -129,7 +129,7 @@ function ChannelConfigForm({ channel, onSave, onTest, onDelete, onClose }: {
         </Button>
         <button
           onClick={() => onDelete(channel.id)}
-          className="ml-auto text-[10px] text-[#555] hover:text-red transition-colors"
+          className="ml-auto text-[10px] text-[#949494] hover:text-red transition-colors"
         >
           Delete
         </button>
@@ -158,7 +158,7 @@ function AddChannelForm({ onCreate, onClose }: {
     <div className="rounded-lg border border-dashed border-[#2A2A2A] bg-[#0D0D0D] p-4 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[#888] uppercase tracking-wider">New channel</span>
-        <button onClick={onClose} className="text-[#333] hover:text-[#666] text-xs">✕</button>
+        <button onClick={onClose} className="text-[#808080] hover:text-[#949494] text-xs">✕</button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <select
@@ -294,7 +294,7 @@ export default function AlertsPage() {
             { label: "Triggered Today", value: triggeredToday, color: "#F59E0B" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-lg border border-[#1E1E1E] bg-[#111] p-4">
-              <p className="text-[10px] text-[#444] uppercase tracking-wider mb-1">{stat.label}</p>
+              <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-1">{stat.label}</p>
               <p className="text-2xl font-semibold tabular-nums" style={{ color: stat.color }}>
                 {stat.value}
               </p>
@@ -309,7 +309,7 @@ export default function AlertsPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-3 py-1.5 text-xs rounded capitalize font-medium transition-colors ${
-                activeTab === tab ? "bg-blue text-white" : "text-[#555] hover:text-[#888]"
+                activeTab === tab ? "bg-blue text-white" : "text-[#949494] hover:text-[#888]"
               }`}
             >
               {tab}
@@ -324,11 +324,11 @@ export default function AlertsPage() {
 
             {/* Enhanced rule builder */}
             <div className="rounded-lg border border-dashed border-[#2A2A2A] bg-[#0D0D0D] p-4 space-y-3">
-              <p className="text-xs font-medium text-[#444] uppercase tracking-wider">Rule Builder</p>
+              <p className="text-xs font-medium text-[#808080] uppercase tracking-wider">Rule Builder</p>
 
               {/* Main condition row */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-[#555]">Alert when</span>
+                <span className="text-xs text-[#949494]">Alert when</span>
                 <select
                   value={metric}
                   onChange={(e) => setMetric(e.target.value)}
@@ -354,19 +354,19 @@ export default function AlertsPage() {
                   onChange={(e) => setThreshold(e.target.value)}
                   className="bg-[#111] border border-[#2A2A2A] rounded px-2 py-1 text-xs text-[#F5F5F5] outline-none w-16 focus:border-blue transition-colors"
                 />
-                <span className="text-xs text-[#555]">{metric === "Error Rate" ? "%" : "ms"} for</span>
+                <span className="text-xs text-[#949494]">{metric === "Error Rate" ? "%" : "ms"} for</span>
                 <input
                   type="number"
                   value={window}
                   onChange={(e) => setWindow(e.target.value)}
                   className="bg-[#111] border border-[#2A2A2A] rounded px-2 py-1 text-xs text-[#F5F5F5] outline-none w-14 focus:border-blue transition-colors"
                 />
-                <span className="text-xs text-[#555]">min</span>
+                <span className="text-xs text-[#949494]">min</span>
               </div>
 
               {/* Severity + channel row */}
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs text-[#555]">Severity</span>
+                <span className="text-xs text-[#949494]">Severity</span>
                 <div className="flex items-center gap-1">
                   {SEVERITIES.map((s) => (
                     <button
@@ -376,7 +376,7 @@ export default function AlertsPage() {
                         "px-2.5 py-1 rounded text-[10px] font-semibold border transition-colors",
                         severity === s.value
                           ? "border-current"
-                          : "border-[#1E1E1E] text-[#555] hover:text-[#888]"
+                          : "border-[#1E1E1E] text-[#949494] hover:text-[#888]"
                       )}
                       style={severity === s.value ? { color: s.color, borderColor: s.color, backgroundColor: `${s.color}18` } : {}}
                     >
@@ -385,7 +385,7 @@ export default function AlertsPage() {
                   ))}
                 </div>
 
-                <span className="text-xs text-[#555]">Send to</span>
+                <span className="text-xs text-[#949494]">Send to</span>
                 <select
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
@@ -406,7 +406,7 @@ export default function AlertsPage() {
               </div>
 
               {/* Preview */}
-              <p className="text-[10px] text-[#333] font-mono bg-[#0A0A0A] rounded px-3 py-2 border border-[#161616]">
+              <p className="text-[10px] text-[#808080] font-mono bg-[#0A0A0A] rounded px-3 py-2 border border-[#161616]">
                 {preview}
               </p>
             </div>
@@ -431,7 +431,7 @@ export default function AlertsPage() {
                               {connected ? "connected" : "not configured"}
                             </Badge>
                             {ch.lastDeliveryAt && (
-                              <span className="text-[10px] text-[#333]">
+                              <span className="text-[10px] text-[#808080]">
                                 {timeAgo(ch.lastDeliveryAt)} · {ch.lastDeliveryOk ? "OK" : "failed"}
                               </span>
                             )}
@@ -459,7 +459,7 @@ export default function AlertsPage() {
                 );
               })}
               {channels.length === 0 && !addingChannel && (
-                <p className="col-span-2 text-xs text-[#444] text-center py-6">
+                <p className="col-span-2 text-xs text-[#808080] text-center py-6">
                   No channels yet. Add one to receive alert notifications.
                 </p>
               )}
@@ -469,7 +469,7 @@ export default function AlertsPage() {
             ) : (
               <button
                 onClick={() => setAddingChannel(true)}
-                className="rounded-lg border border-dashed border-[#2A2A2A] bg-transparent p-4 flex items-center justify-center gap-2 text-[#444] hover:text-[#888] hover:border-[#333] transition-colors w-full"
+                className="rounded-lg border border-dashed border-[#2A2A2A] bg-transparent p-4 flex items-center justify-center gap-2 text-[#808080] hover:text-[#888] hover:border-[#333] transition-colors w-full"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-sm">Add Channel</span>
@@ -482,14 +482,14 @@ export default function AlertsPage() {
         {activeTab === "history" && (
           <div className="rounded-lg border border-[#1E1E1E] bg-[#111] divide-y divide-[#161616]">
             {historyEntries.length === 0 && (
-              <p className="text-xs text-[#444] px-4 py-6 text-center">No alert history yet.</p>
+              <p className="text-xs text-[#808080] px-4 py-6 text-center">No alert history yet.</p>
             )}
             {historyEntries.map((h) => (
               <div key={h.id} className="flex items-center gap-4 px-4 py-3 hover:bg-[#151515] transition-colors cursor-pointer">
                 <div className={`h-2 w-2 rounded-full flex-shrink-0 ${h.resolved ? "bg-green" : "bg-red animate-pulse"}`} />
                 <div className="flex-1">
                   <p className="text-xs font-medium text-[#F5F5F5]">{h.ruleName}</p>
-                  <p className="text-[10px] text-[#444] mt-0.5">
+                  <p className="text-[10px] text-[#808080] mt-0.5">
                     {timeAgo(h.firedAt)} · {h.duration} · via {h.channel}
                   </p>
                 </div>

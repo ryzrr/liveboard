@@ -7,31 +7,21 @@ import type { Incident, StatCard } from "@/lib/types";
 
 const SPARKLINE_LENGTH = 20;
 
-function emptyCards(): StatCard[] {
+function emptyCards(label = "connecting…"): StatCard[] {
   return [
-    { label: "Requests / min", value: "—", unit: "req", delta: 0, deltaLabel: "connecting…", sparkline: [] },
-    { label: "Error Rate",      value: "—", unit: "%",   delta: 0, deltaLabel: "connecting…", sparkline: [] },
-    { label: "p99 Latency",     value: "—", unit: "ms",  delta: 0, deltaLabel: "connecting…", sparkline: [] },
-    { label: "Avg Latency",     value: "—", unit: "ms",  delta: 0, deltaLabel: "connecting…", sparkline: [] },
+    { label: "Requests / min", value: "—", unit: "req", delta: 0, deltaLabel: label, sparkline: [] },
+    { label: "Error Rate",      value: "—", unit: "%",   delta: 0, deltaLabel: label, sparkline: [] },
+    { label: "p99 Latency",     value: "—", unit: "ms",  delta: 0, deltaLabel: label, sparkline: [] },
+    { label: "Avg Latency",     value: "—", unit: "ms",  delta: 0, deltaLabel: label, sparkline: [] },
   ];
-}
-
-/** Realistic metric tick for demo mode when no live backend is connected. */
-function mockMetric(): MetricUpdate {
-  return {
-    requests:  Math.round(2200 + Math.random() * 520),
-    errorRate: Math.round((0.3 + Math.random() * 1.7) * 10) / 10,
-    p99:       Math.round(250 + Math.random() * 95),
-    avg:       Math.round(90 + Math.random() * 55),
-    bucket:    new Date().toISOString(),
-  };
 }
 
 /**
  * Streams live stat-card data for a project. Fetches a short-lived, project-
- * scoped realtime token from the BFF (no API key in the browser). When there's
- * no project / backend, falls back to a self-updating demo stream so the
- * dashboard always feels alive instead of stuck "connecting…".
+ * scoped realtime token from the BFF (no API key in the browser). Never
+ * fabricates numbers: with no project, no realtime token, or simply no
+ * traffic in the last minute, the cards stay at the honest "—" empty state —
+ * that's the truth, not a reason to make something up.
  */
 export function useMetrics(projectId: string | null) {
   const [cards, setCards] = useState<StatCard[]>(emptyCards);
@@ -101,23 +91,20 @@ export function useMetrics(projectId: string | null) {
       ]);
     }
 
-    let mockTimer: ReturnType<typeof setInterval> | null = null;
-
-    function startMock() {
-      if (mockTimer) return;
-      // Seed history so sparklines render full immediately.
-      for (let i = 0; i < SPARKLINE_LENGTH; i++) applyUpdate(mockMetric());
-      mockTimer = setInterval(() => applyUpdate(mockMetric()), 2000);
-    }
-
-    // No project context (logged-out / loading) → synthetic demo so the UI
-    // isn't dead. A REAL project never shows synthetic numbers.
+    // No project context yet (logged-out / still loading) — nothing to
+    // connect to. Stay on the honest empty state, no synthetic numbers.
     if (!projectId) {
-      startMock();
-      return () => {
-        if (mockTimer) clearInterval(mockTimer);
-      };
+      history.current = { requests: [], errorRate: [], p99: [], avg: [] };
+      setCards(emptyCards("no project selected"));
+      return;
     }
+
+    // Clear any previous project's values before this connection attempt —
+    // otherwise, if this project simply has no traffic in the last minute,
+    // the last project's numbers would stay on screen looking exactly like
+    // this project's live data instead of the honest "—" empty state.
+    history.current = { requests: [], errorRate: [], p99: [], avg: [] };
+    setCards(emptyCards());
 
     let cancelled = false;
     let socket: ReturnType<typeof getSocket> | null = null;
@@ -125,15 +112,10 @@ export function useMetrics(projectId: string | null) {
 
     void (async () => {
       const token = await fetchRealtimeToken(projectId);
-      if (cancelled) return;
-      if (!token) {
-        // Realtime unavailable entirely (backend down) — demo fallback for dev.
-        startMock();
-        return;
-      }
-      // Real project + realtime available → show ONLY real metrics. When there's
-      // no traffic in the last minute the worker publishes nothing, so the cards
-      // stay at their empty ("—") state — which is the honest answer.
+      if (cancelled || !token) return;
+      // When there's no traffic in the last minute the worker publishes
+      // nothing, so the cards stay at their empty ("—") state — the honest
+      // answer, not a reason to fabricate a number.
       socket = getSocket(token);
       onMetric = (update: MetricUpdate) => applyUpdate(update);
       socket.on("metric", onMetric);
@@ -142,11 +124,70 @@ export function useMetrics(projectId: string | null) {
     return () => {
       cancelled = true;
       if (socket && onMetric) socket.off("metric", onMetric);
-      if (mockTimer) clearInterval(mockTimer);
     };
   }, [projectId]);
 
   return cards;
+}
+
+const LIVE_CHART_BUFFER = 120; // ~2 minutes at the worker's 1-tick/sec cadence
+
+export interface LiveChartPoint {
+  time: string;
+  requests: number;
+  errors2xx: number;
+  errors4xx: number;
+  errors5xx: number;
+  p99: number;
+}
+
+/**
+ * Rolling ~2-minute buffer of real request-rate data for the "Live" chart
+ * option — fed from the exact same per-second Socket.io metric stream that
+ * powers the stat cards (already proven accurate: a real 60s-window COUNT()
+ * from Postgres, not an estimate). Never interpolates or backfills; it only
+ * ever contains ticks that actually arrived, so a quiet stretch is a quiet
+ * stretch, not a smoothed guess.
+ */
+export function useLiveChartData(projectId: string | null): LiveChartPoint[] {
+  const [points, setPoints] = useState<LiveChartPoint[]>([]);
+
+  useEffect(() => {
+    setPoints([]);
+    if (!projectId) return;
+
+    let cancelled = false;
+    let socket: ReturnType<typeof getSocket> | null = null;
+    let onMetric: ((update: MetricUpdate) => void) | null = null;
+
+    void (async () => {
+      const token = await fetchRealtimeToken(projectId);
+      if (cancelled || !token) return;
+      socket = getSocket(token);
+      onMetric = (update: MetricUpdate) => {
+        const point: LiveChartPoint = {
+          // Raw ISO instant, not a pre-formatted string — formatted for
+          // display client-side by formatChartTime, same as the REST
+          // timeseries data these points render alongside.
+          time: new Date().toISOString(),
+          requests: update.requests,
+          errors2xx: update.req2xx ?? 0,
+          errors4xx: update.req4xx ?? 0,
+          errors5xx: update.req5xx ?? 0,
+          p99: update.p99,
+        };
+        setPoints((prev) => [...prev, point].slice(-LIVE_CHART_BUFFER));
+      };
+      socket.on("metric", onMetric);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (socket && onMetric) socket.off("metric", onMetric);
+    };
+  }, [projectId]);
+
+  return points;
 }
 
 interface RawIncidentPush {

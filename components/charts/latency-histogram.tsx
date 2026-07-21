@@ -40,12 +40,12 @@ export function LatencyHistogram({ p50, p95, p99 }: LatencyHistogramProps) {
       <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
         <XAxis
           dataKey="label"
-          tick={{ fill: "#555", fontSize: 10 }}
+          tick={{ fill: "#949494", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fill: "#444", fontSize: 10 }}
+          tick={{ fill: "#808080", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
         />

@@ -77,7 +77,7 @@ export function EndpointComparison({ endpoints, onClose }: EndpointComparisonPro
             </div>
           ))}
         </div>
-        <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+        <button onClick={onClose} className="text-[#808080] hover:text-[#888] transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -86,10 +86,10 @@ export function EndpointComparison({ endpoints, onClose }: EndpointComparisonPro
       <div className="grid grid-cols-4 gap-2">
         {metrics.map((m) => (
           <div key={m.label} className="rounded border border-[#1A1A1A] bg-[#0D0D0D] p-3">
-            <p className="text-[10px] text-[#444] uppercase tracking-wider mb-2">{m.label}</p>
+            <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-2">{m.label}</p>
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-[#555]">A</span>
+                <span className="text-[10px] text-[#949494]">A</span>
                 <span
                   className="text-xs font-mono font-semibold"
                   style={{ color: m.winner === "a" ? "#22C55E" : "#F5F5F5" }}
@@ -98,7 +98,7 @@ export function EndpointComparison({ endpoints, onClose }: EndpointComparisonPro
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-[#555]">B</span>
+                <span className="text-[10px] text-[#949494]">B</span>
                 <span
                   className="text-xs font-mono font-semibold"
                   style={{ color: m.winner === "b" ? "#22C55E" : "#F5F5F5" }}
@@ -113,19 +113,19 @@ export function EndpointComparison({ endpoints, onClose }: EndpointComparisonPro
 
       {/* p99 Latency chart */}
       <div>
-        <p className="text-[10px] text-[#444] uppercase tracking-wider mb-3">p99 Latency — 24h</p>
+        <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-3">p99 Latency — 24h</p>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#333" }} interval={5} />
-              <YAxis tick={{ fontSize: 9, fill: "#333" }} tickFormatter={(v) => `${v}ms`} width={45} />
+              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#808080" }} interval={5} />
+              <YAxis tick={{ fontSize: 9, fill: "#808080" }} tickFormatter={(v) => `${v}ms`} width={45} />
               <Tooltip
                 contentStyle={{ background: "#111", border: "1px solid #1E1E1E", borderRadius: 6 }}
-                labelStyle={{ color: "#555", fontSize: 10 }}
+                labelStyle={{ color: "#949494", fontSize: 10 }}
                 itemStyle={{ fontSize: 11 }}
                 formatter={(v) => `${String(v)}ms`}
               />
-              <Legend wrapperStyle={{ fontSize: 10, color: "#555" }} />
+              <Legend wrapperStyle={{ fontSize: 10, color: "#949494" }} />
               <Line dataKey={a.route} stroke={COLORS[0]} dot={false} strokeWidth={1.5} />
               <Line dataKey={b.route} stroke={COLORS[1]} dot={false} strokeWidth={1.5} />
             </LineChart>

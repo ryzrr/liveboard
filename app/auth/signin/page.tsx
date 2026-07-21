@@ -50,7 +50,7 @@ function SignInForm() {
         <div className="rounded-lg border border-[#1E1E1E] bg-[#111] p-8 space-y-6">
           <div className="space-y-1.5 text-center">
             <h1 className="text-lg font-semibold text-[#F5F5F5]">Welcome back</h1>
-            <p className="text-sm text-[#555]">Sign in to your Liveboard workspace</p>
+            <p className="text-sm text-[#949494]">Sign in to your Liveboard workspace</p>
           </div>
 
           {error && (
@@ -76,7 +76,7 @@ function SignInForm() {
               {hasGoogle && (
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-px bg-[#1E1E1E]" />
-                  <span className="text-[10px] text-[#333]">dev login</span>
+                  <span className="text-[10px] text-[#808080]">dev login</span>
                   <div className="flex-1 h-px bg-[#1E1E1E]" />
                 </div>
               )}
@@ -124,15 +124,15 @@ function SignInForm() {
             </p>
           )}
 
-          <p className="text-center text-[10px] text-[#444] leading-relaxed">
+          <p className="text-center text-[10px] text-[#808080] leading-relaxed">
             By signing in you agree to our{" "}
-            <span className="text-[#666] hover:text-[#888] cursor-pointer transition-colors">Terms of Service</span>
+            <span className="text-[#949494] hover:text-[#888] cursor-pointer transition-colors">Terms of Service</span>
             {" "}and{" "}
-            <span className="text-[#666] hover:text-[#888] cursor-pointer transition-colors">Privacy Policy</span>.
+            <span className="text-[#949494] hover:text-[#888] cursor-pointer transition-colors">Privacy Policy</span>.
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-[#333]">Open source API observability</p>
+        <p className="mt-6 text-center text-xs text-[#808080]">Open source API observability</p>
       </div>
     </div>
   );

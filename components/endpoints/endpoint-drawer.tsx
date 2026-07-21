@@ -41,7 +41,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded hover:bg-[#1E1E1E] text-[#444] hover:text-[#888] transition-colors"
+              className="p-1 rounded hover:bg-[#1E1E1E] text-[#808080] hover:text-[#888] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -51,7 +51,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
             {/* Health Score */}
             <div className="rounded-lg border border-[#1E1E1E] bg-[#111] p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-[#444] uppercase tracking-wider">Health Score</span>
+                <span className="text-[10px] text-[#808080] uppercase tracking-wider">Health Score</span>
                 <span
                   className="text-xl font-bold tabular-nums"
                   style={{ color: getHealthColor(endpoint.healthScore) }}
@@ -81,7 +81,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
                 },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-lg border border-[#1E1E1E] bg-[#111] p-3">
-                  <p className="text-[10px] text-[#444] uppercase tracking-wider mb-1">{stat.label}</p>
+                  <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-1">{stat.label}</p>
                   <p className="text-lg font-semibold tabular-nums" style={{ color: stat.color || "#F5F5F5" }}>
                     {stat.value}
                   </p>
@@ -91,7 +91,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
 
             {/* Latency */}
             <div className="rounded-lg border border-[#1E1E1E] bg-[#111] p-3">
-              <p className="text-[10px] text-[#444] uppercase tracking-wider mb-3">Latency Distribution</p>
+              <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-3">Latency Distribution</p>
               <LatencyHistogram p50={endpoint.p50} p95={endpoint.p95} p99={endpoint.p99} />
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {[
@@ -100,7 +100,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
                   { label: "p99", value: formatMs(endpoint.p99), color: "#EF4444" },
                 ].map((p) => (
                   <div key={p.label} className="text-center">
-                    <p className="text-[10px] text-[#444] mb-0.5">{p.label}</p>
+                    <p className="text-[10px] text-[#808080] mb-0.5">{p.label}</p>
                     <p className="text-xs font-semibold font-mono" style={{ color: p.color }}>
                       {p.value}
                     </p>
@@ -111,7 +111,7 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
 
             {/* Top errors */}
             <div className="rounded-lg border border-[#1E1E1E] bg-[#111] p-3">
-              <p className="text-[10px] text-[#444] uppercase tracking-wider mb-3">Top Errors</p>
+              <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-3">Top Errors</p>
               {endpoint.errorRate > 0 ? (
                 <div className="space-y-2">
                   {[
@@ -120,13 +120,13 @@ export function EndpointDrawer({ endpoint, onClose }: EndpointDrawerProps) {
                   ].map((err, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs">
                       <span className="text-red font-mono font-bold flex-shrink-0">{err.code}</span>
-                      <span className="text-[#555] flex-1 truncate">{err.msg}</span>
-                      <span className="text-[#444] flex-shrink-0">{err.count}x</span>
+                      <span className="text-[#949494] flex-1 truncate">{err.msg}</span>
+                      <span className="text-[#808080] flex-shrink-0">{err.count}x</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#444]">No errors in selected window</p>
+                <p className="text-xs text-[#808080]">No errors in selected window</p>
               )}
             </div>
           </div>

@@ -1,4 +1,4 @@
-export type TimeRange = "1h" | "6h" | "24h" | "7d";
+export type TimeRange = "live" | "1h" | "6h" | "24h" | "7d";
 
 export interface StatCard {
   label: string;

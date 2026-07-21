@@ -9,7 +9,6 @@ import {
   Bell,
   Globe,
   Settings,
-  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LiveboardIcon } from "@/components/logo";
@@ -20,7 +19,6 @@ const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/endpoints", label: "Endpoints", icon: Zap },
   { href: "/traces", label: "Traces", icon: GitBranch },
-  { href: "/pipelines", label: "Pipelines", icon: Activity },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/status", label: "Status Page", icon: Globe },
 ];

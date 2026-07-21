@@ -16,6 +16,22 @@ export function formatMs(ms: number): string {
   return `${ms}ms`;
 }
 
+/**
+ * Formats a chart timestamp (ISO 8601 UTC instant) in the viewer's own local
+ * timezone — always includes the date, not just the hour, since any bucket
+ * window can span a day boundary (whenever "now" is within it of midnight),
+ * and an hour-only label can't tell you "09:30" is 13 hours after "20:15"
+ * rather than 13 hours before it.
+ */
+export function formatChartTime(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString([], { month: "2-digit", day: "2-digit" });
+  // Explicit 24h — the locale default can be 12h with an AM/PM suffix, which
+  // is long enough to make already-tight tick labels run into each other.
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${date} ${time}`;
+}
+
 export function formatPercent(n: number, decimals = 1): string {
   return `${n.toFixed(decimals)}%`;
 }

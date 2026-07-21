@@ -40,7 +40,7 @@ export function SpanDetail({ span, onClose }: SpanDetailProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded hover:bg-[#1E1E1E] text-[#444] hover:text-[#888] transition-colors"
+              className="p-1 rounded hover:bg-[#1E1E1E] text-[#808080] hover:text-[#888] transition-colors"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -56,7 +56,7 @@ export function SpanDetail({ span, onClose }: SpanDetailProps) {
               { label: "Parent", value: span.parentId || "root", mono: true },
             ].map((field) => (
               <div key={field.label}>
-                <p className="text-[10px] text-[#444] uppercase tracking-wider mb-0.5">{field.label}</p>
+                <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-0.5">{field.label}</p>
                 <p
                   className={cn("text-xs", field.mono ? "font-mono" : "font-medium")}
                   style={{ color: field.color || "#888" }}
@@ -69,12 +69,12 @@ export function SpanDetail({ span, onClose }: SpanDetailProps) {
 
           {Object.keys(span.tags).length > 0 && (
             <div className="px-4 pb-4">
-              <p className="text-[10px] text-[#444] uppercase tracking-wider mb-2">Tags</p>
+              <p className="text-[10px] text-[#808080] uppercase tracking-wider mb-2">Tags</p>
               <div className="space-y-1">
                 {Object.entries(span.tags).map(([k, v]) => (
                   <div key={k} className="flex items-center gap-2 text-xs font-mono">
                     <span className="text-blue">{k}</span>
-                    <span className="text-[#333]">=</span>
+                    <span className="text-[#808080]">=</span>
                     <span className="text-[#888]">{v}</span>
                   </div>
                 ))}

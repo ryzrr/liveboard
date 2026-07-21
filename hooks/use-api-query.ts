@@ -4,22 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { useProjects } from "@/components/providers/project-provider";
 
-// Stable empty-array reference for the "real project, no data" state — reused
-// across renders so consumers depending on the result don't see a new [] each
-// render (which would loop any effect keyed on it).
-const EMPTY_LIST: readonly never[] = [];
+// Stable empty-array reference — reused across renders so consumers depending
+// on the result don't see a new [] each render (which would loop any effect
+// keyed on it). Exported so callers can pass the same reference as `empty`.
+export const EMPTY_LIST: readonly never[] = [];
 
 /**
  * Generic hook for REST API data.
- * - Shows `fallback` (mock) while loading or on error.
- * - Swaps to real data once the fetch succeeds.
+ *
+ * Never fabricates data. `data` is `empty` while loading, with no active
+ * project, or on a fetch error — real data only ever comes from a real,
+ * successful fetch. Callers render their own honest empty/loading state from
+ * `loading` + an empty `data`, rather than this hook ever guessing at numbers.
+ *
  * - Refetches whenever `path` or serialised `params` change.
  * - Polls every `pollMs` milliseconds if provided.
  */
 export function useApiQuery<T>(
   path: string,
   params: Record<string, string>,
-  fallback: T,
+  empty: T,
   transform?: (raw: unknown) => T,
   pollMs?: number,
 ): { data: T; loading: boolean; refetch: () => void } {
@@ -44,13 +48,14 @@ export function useApiQuery<T>(
   // Main fetch — runs on mount, param change, or manual refetch tick
   useEffect(() => {
     let active = true;
-    // Only clear data (show fallback) when params actually changed, not on poll ticks
+    // Only clear data (show empty) when params actually changed, not on poll ticks
     if (tick === 0) {
       setData(null);
       setLoading(true);
     }
 
-    // No active project yet → show fallback (demo) instead of a scopeless call.
+    // No active project yet (still loading auth/project state) — nothing to
+    // fetch. Stay on the honest empty state rather than a scopeless call.
     if (!projectId) {
       setLoading(false);
       return () => {
@@ -92,13 +97,5 @@ export function useApiQuery<T>(
     return () => clearInterval(id);
   }, [pollMs]);
 
-  // Honesty rule: a REAL project never shows the demo `fallback`. While loading
-  // or on error it shows an empty result (empty state), not fabricated data.
-  // The demo `fallback` is only used when there's no project (landing / loading).
-  // Use the shared EMPTY_LIST so the reference is stable across renders.
-  const effectiveFallback = projectId
-    ? (Array.isArray(fallback) ? (EMPTY_LIST as unknown as T) : fallback)
-    : fallback;
-
-  return { data: data ?? effectiveFallback, loading, refetch };
+  return { data: data ?? empty, loading, refetch };
 }

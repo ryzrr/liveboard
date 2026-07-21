@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { verifyProjectAccess } from "@/lib/project-access";
 
 /**
  * Session-scoped read/write proxy for dashboard telemetry.
@@ -7,9 +8,11 @@ import { auth } from "@/auth";
  *   browser (no key) → here (NextAuth session) → backend (internal token + project)
  *
  * Enforces that the requested `?project=<id>` belongs to the signed-in user
- * (via `session.projectIds`), then forwards to the FastAPI backend with the
- * server-only internal token and an explicit `x-project-id`. The browser never
- * holds a project API key or the internal token.
+ * with a fresh membership check (see lib/project-access.ts — a cached
+ * session-level list goes stale the moment a project is created after
+ * login), then forwards to the FastAPI backend with the server-only internal
+ * token and an explicit `x-project-id`. The browser never holds a project API
+ * key or the internal token.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -25,7 +28,7 @@ async function proxy(req: Request, ctx: { params: Promise<{ path: string[] }> })
   const reqUrl = new URL(req.url);
   const project = reqUrl.searchParams.get("project");
   if (!project) return NextResponse.json({ error: "missing_project" }, { status: 400 });
-  if (!session.projectIds?.includes(project)) {
+  if (!(await verifyProjectAccess(email, project))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

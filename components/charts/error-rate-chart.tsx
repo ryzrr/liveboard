@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { ChartData } from "@/lib/types";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, formatChartTime } from "@/lib/utils";
 
 interface ErrorRateChartProps {
   data: ChartData[];
@@ -32,7 +32,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-[#2A2A2A] bg-[#161616] p-2.5 shadow-xl min-w-[120px]">
-      <p className="text-[10px] text-[#555] mb-2 font-mono">{label}</p>
+      <p className="text-[10px] text-[#949494] mb-2 font-mono">{label ? formatChartTime(label) : ""}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-1.5">
@@ -47,11 +47,14 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export function ErrorRateChart({ data }: ErrorRateChartProps) {
-  const xStep = Math.ceil(data.length / 8);
+  // Labels now always carry the date ("07/20 14:30", not "14:30" — see
+  // apps/api/api/routes/query.py) so fewer of them fit before overlapping;
+  // target ~5 visible ticks instead of ~8.
+  const xStep = Math.ceil(data.length / 3);
 
   return (
     <ResponsiveContainer width="100%" height={160}>
-      <AreaChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 4, right: 44, left: -24, bottom: 0 }}>
         <defs>
           <linearGradient id="grad2xx" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#22C55E" stopOpacity={0.25} />
@@ -69,13 +72,14 @@ export function ErrorRateChart({ data }: ErrorRateChartProps) {
         <CartesianGrid strokeDasharray="3 3" stroke="#161616" vertical={false} />
         <XAxis
           dataKey="time"
-          tick={{ fill: "#444", fontSize: 10, fontFamily: "monospace" }}
+          tickFormatter={formatChartTime}
+          tick={{ fill: "#808080", fontSize: 10, fontFamily: "monospace" }}
           axisLine={false}
           tickLine={false}
           interval={xStep}
         />
         <YAxis
-          tick={{ fill: "#444", fontSize: 10 }}
+          tick={{ fill: "#808080", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
           tickFormatter={formatNumber}

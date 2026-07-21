@@ -67,11 +67,11 @@ export function FlameGraph({ trace, onSpanClick, selectedSpan, highlightCritical
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1E1E1E]">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-[#555]">trace_id:</span>
+          <span className="text-xs font-mono text-[#949494]">trace_id:</span>
           <span className="text-xs font-mono text-blue">{trace.id}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#444]">{trace.spans.length} spans</span>
+          <span className="text-xs text-[#808080]">{trace.spans.length} spans</span>
           <span
             className={cn(
               "text-xs font-mono font-bold",
@@ -87,7 +87,7 @@ export function FlameGraph({ trace, onSpanClick, selectedSpan, highlightCritical
       <div className="px-4 py-1.5 border-b border-[#161616]">
         <div className="flex justify-between">
           {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
-            <span key={pct} className="text-[10px] text-[#333] font-mono">
+            <span key={pct} className="text-[10px] text-[#808080] font-mono">
               {Math.round(pct * totalDuration)}ms
             </span>
           ))}
@@ -108,7 +108,7 @@ export function FlameGraph({ trace, onSpanClick, selectedSpan, highlightCritical
             <div key={span.id} className="flex items-center gap-3">
               <div
                 className="w-[120px] flex-shrink-0 text-[10px] font-mono truncate transition-colors"
-                style={{ color: isCritical ? "#888" : "#333" }}
+                style={{ color: isCritical ? "#888" : "#808080" }}
               >
                 {span.service}
               </div>
@@ -134,7 +134,7 @@ export function FlameGraph({ trace, onSpanClick, selectedSpan, highlightCritical
                   )}
                 </button>
               </div>
-              <div className="w-[50px] flex-shrink-0 text-[10px] text-[#444] font-mono text-right tabular-nums">
+              <div className="w-[50px] flex-shrink-0 text-[10px] text-[#808080] font-mono text-right tabular-nums">
                 {span.duration}ms
               </div>
             </div>

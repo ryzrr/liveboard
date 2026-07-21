@@ -80,15 +80,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
 
   callbacks: {
-    // Provision a real user + org + project in the backend on sign-in, and
-    // record the projects this user may read. Never blocks login on failure.
+    // Provision a real user + org + project in the backend on sign-in.
+    // Never blocks login on failure.
+    //
+    // Deliberately NOT caching the project list on the token here: a JWT
+    // session is only re-derived at sign-in, so a project created afterward
+    // (by this route or a teammate) would look inaccessible — every
+    // dashboard read and realtime connection 403ing — until the user signed
+    // out and back in. Project access is instead checked fresh, per request,
+    // against the backend (lib/project-access.ts).
     async jwt({ token, user }) {
       if (user?.email) {
         try {
           const result = await provisionUser(user.email, user.name ?? undefined);
           if (result) {
             token.userId = result.user_id;
-            token.projectIds = result.projects.map((p) => p.id);
             token.defaultProjectId = result.projects[0]?.id;
           }
         } catch (err) {
@@ -118,14 +124,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       const t = token as {
         userId?: string;
-        projectIds?: string[];
         defaultProjectId?: string;
         sub?: string;
       };
       if (session.user) {
         session.user.id = t.userId ?? t.sub ?? session.user.id;
       }
-      session.projectIds = t.projectIds;
       session.defaultProjectId = t.defaultProjectId;
       return session;
     },

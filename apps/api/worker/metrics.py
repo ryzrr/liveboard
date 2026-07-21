@@ -4,8 +4,8 @@ Metrics publisher — runs as a background task inside the worker process.
 Every second it:
   1. SCANs Redis for active event streams (events:*)
   2. Queries the last 60-second window from TimescaleDB per project
-  3. Publishes { requests, errorRate, p99, bucket } to  metrics:{project_id}
-     on the Redis pub/sub bus
+  3. Publishes { requests, errorRate, p99, avg, req2xx, req4xx, req5xx, bucket }
+     to metrics:{project_id} on the Redis pub/sub bus
 
 The API process (realtime/pubsub.py) subscribes to metrics:* and forwards
 each message to the correct Socket.io room.
@@ -55,7 +55,10 @@ async def _fetch_metrics(conn: asyncpg.Connection, project_id: str) -> Optional[
             COALESCE(
                 PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms), 0
             )                                                                 AS p99,
-            COALESCE(AVG(duration_ms), 0)                                    AS avg_ms
+            COALESCE(AVG(duration_ms), 0)                                    AS avg_ms,
+            SUM(CASE WHEN status_code < 400               THEN 1 ELSE 0 END) AS req_2xx,
+            SUM(CASE WHEN status_code BETWEEN 400 AND 499 THEN 1 ELSE 0 END) AS req_4xx,
+            SUM(CASE WHEN status_code >= 500               THEN 1 ELSE 0 END) AS req_5xx
         FROM events
         WHERE project_id = $1::uuid
           AND time > NOW() - INTERVAL '1 minute'
@@ -69,6 +72,9 @@ async def _fetch_metrics(conn: asyncpg.Connection, project_id: str) -> Optional[
         "errorRate": float(row["error_rate"] or 0),
         "p99": round(float(row["p99"]), 1),
         "avg": round(float(row["avg_ms"]), 1),
+        "req2xx": int(row["req_2xx"] or 0),
+        "req4xx": int(row["req_4xx"] or 0),
+        "req5xx": int(row["req_5xx"] or 0),
         "bucket": None,
     }
 

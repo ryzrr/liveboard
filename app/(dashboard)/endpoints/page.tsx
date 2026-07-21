@@ -112,7 +112,7 @@ export default function EndpointsPage() {
             <Badge variant="red" dot>{summary.critical} Critical</Badge>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-[#444]">{filtered.length} endpoints</span>
+            <span className="text-xs text-[#808080]">{filtered.length} endpoints</span>
             <Button
               variant={compareMode ? "primary" : "ghost"}
               size="sm"
@@ -126,13 +126,13 @@ export default function EndpointsPage() {
 
         {/* Compare mode hint */}
         {compareMode && !showingComparison && (
-          <div className="flex items-center gap-2 text-xs text-[#555] bg-blue-dim border border-blue/20 rounded px-3 py-2">
+          <div className="flex items-center gap-2 text-xs text-[#949494] bg-blue-dim border border-blue/20 rounded px-3 py-2">
             <GitCompare className="h-3 w-3 text-blue" />
             {compareSelection.length === 0
               ? "Select 2 endpoints to compare"
               : `${compareSelection.length}/2 selected — pick one more`}
             {compareSelection.length > 0 && (
-              <button onClick={() => setCompareSelection([])} className="ml-auto text-[#444] hover:text-[#888]">
+              <button onClick={() => setCompareSelection([])} className="ml-auto text-[#808080] hover:text-[#888]">
                 <X className="h-3 w-3" />
               </button>
             )}
@@ -151,13 +151,13 @@ export default function EndpointsPage() {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Route search */}
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[#1E1E1E] bg-[#111] flex-1 max-w-xs hover:border-[#2A2A2A] transition-colors">
-            <Search className="h-3 w-3 text-[#444] flex-shrink-0" />
+            <Search className="h-3 w-3 text-[#808080] flex-shrink-0" />
             <input
               type="text"
               placeholder="Filter by route..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent text-xs text-[#F5F5F5] placeholder-[#333] outline-none flex-1"
+              className="bg-transparent text-xs text-[#F5F5F5] placeholder-[#808080] outline-none flex-1"
             />
           </div>
 
@@ -168,7 +168,7 @@ export default function EndpointsPage() {
                 key={m}
                 onClick={() => setMethodFilter(m)}
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${
-                  methodFilter === m ? "bg-blue text-white" : "text-[#555] hover:text-[#888]"
+                  methodFilter === m ? "bg-blue text-white" : "text-[#949494] hover:text-[#888]"
                 }`}
               >
                 {m}
@@ -189,7 +189,7 @@ export default function EndpointsPage() {
                       : label === "4xx"
                       ? "bg-yellow/20 text-yellow"
                       : "bg-red/20 text-red"
-                    : "text-[#555] hover:text-[#888]"
+                    : "text-[#949494] hover:text-[#888]"
                 }`}
               >
                 {label}
@@ -199,17 +199,17 @@ export default function EndpointsPage() {
 
           {/* Latency threshold */}
           <div className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-[#1E1E1E] bg-[#111]">
-            <span className="text-[10px] text-[#444]">p99 &lt;</span>
+            <span className="text-[10px] text-[#808080]">p99 &lt;</span>
             <input
               type="number"
               placeholder="ms"
               value={maxLatency}
               onChange={(e) => setMaxLatency(e.target.value)}
-              className="bg-transparent text-xs text-[#F5F5F5] placeholder-[#333] outline-none w-14 text-right tabular-nums"
+              className="bg-transparent text-xs text-[#F5F5F5] placeholder-[#808080] outline-none w-14 text-right tabular-nums"
             />
-            <span className="text-[10px] text-[#333]">ms</span>
+            <span className="text-[10px] text-[#808080]">ms</span>
             {maxLatency && (
-              <button onClick={() => setMaxLatency("")} className="text-[#333] hover:text-[#666]">
+              <button onClick={() => setMaxLatency("")} className="text-[#808080] hover:text-[#949494]">
                 <X className="h-2.5 w-2.5" />
               </button>
             )}

@@ -3,12 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { Search, GitBranch, Map } from "lucide-react";
 import { Topbar } from "@/components/layout/topbar";
+import { TimeRangePicker } from "@/components/layout/time-range-picker";
 import { FlameGraph } from "@/components/traces/flame-graph";
 import { SpanDetail } from "@/components/traces/span-detail";
 import { ServiceMap } from "@/components/traces/service-map";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatMs, timeAgo } from "@/lib/utils";
 import { useTraces } from "@/hooks/use-data";
+import { useTimeRange } from "@/hooks/use-time-range";
 import { useProjects } from "@/components/providers/project-provider";
 import type { Trace, TraceSpan } from "@/lib/types";
 
@@ -36,7 +38,8 @@ type ViewMode = "flamegraph" | "servicemap";
 
 export default function TracesPage() {
   const { activeProject } = useProjects();
-  const { data: traces } = useTraces();
+  const { range, setRange, hours } = useTimeRange("24h");
+  const { data: traces } = useTraces(hours);
   const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
 
   // Keep the selection in sync with the current trace list: clear it when the
@@ -64,7 +67,10 @@ export default function TracesPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Topbar breadcrumb={[{ label: "Projects" }, { label: activeProject?.name ?? "—" }, { label: "Traces" }]} />
+      <Topbar
+        breadcrumb={[{ label: "Projects" }, { label: activeProject?.name ?? "—" }, { label: "Traces" }]}
+        actions={<TimeRangePicker value={range} onChange={setRange} />}
+      />
 
       <div className="flex flex-1 gap-0">
         {/* Trace list */}
@@ -72,13 +78,13 @@ export default function TracesPage() {
           {/* Search */}
           <div className="p-3 border-b border-[#1E1E1E] space-y-2">
             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-[#1E1E1E] bg-[#111]">
-              <Search className="h-3 w-3 text-[#444]" />
+              <Search className="h-3 w-3 text-[#808080]" />
               <input
                 type="text"
                 placeholder="Search trace ID, endpoint..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-transparent text-[10px] text-[#F5F5F5] placeholder-[#333] outline-none flex-1"
+                className="bg-transparent text-[10px] text-[#F5F5F5] placeholder-[#808080] outline-none flex-1"
               />
             </div>
             {/* Duration filter */}
@@ -91,7 +97,7 @@ export default function TracesPage() {
                     "px-2 py-0.5 text-[9px] rounded border transition-colors",
                     durationFilter === opt.value
                       ? "border-blue bg-blue/10 text-blue"
-                      : "border-[#1E1E1E] text-[#444] hover:text-[#888] hover:border-[#2A2A2A]"
+                      : "border-[#1E1E1E] text-[#808080] hover:text-[#888] hover:border-[#2A2A2A]"
                   )}
                 >
                   {opt.label}
@@ -111,14 +117,14 @@ export default function TracesPage() {
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-mono text-[#555]">{trace.id}</span>
+                  <span className="text-[10px] font-mono text-[#949494]">{trace.id}</span>
                   <Badge variant={trace.status === "error" ? "red" : "green"} size="sm">
                     {trace.status}
                   </Badge>
                 </div>
                 <p className="text-xs text-[#F5F5F5] font-mono truncate mb-1">{trace.endpoint}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#444]">{timeAgo(trace.timestamp)}</span>
+                  <span className="text-[10px] text-[#808080]">{timeAgo(trace.timestamp)}</span>
                   <span className={cn(
                     "text-[10px] font-mono font-semibold",
                     trace.totalDuration > 1000 ? "text-red" : trace.totalDuration > 500 ? "text-yellow" : "text-green"
@@ -129,7 +135,7 @@ export default function TracesPage() {
               </button>
             ))}
             {filtered.length === 0 && (
-              <div className="p-6 text-center text-[10px] text-[#333]">No traces match</div>
+              <div className="p-6 text-center text-[10px] text-[#808080]">No traces match</div>
             )}
           </div>
         </div>
@@ -141,12 +147,12 @@ export default function TracesPage() {
               {/* Trace header + toolbar */}
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#444] uppercase tracking-wider">Trace</span>
+                  <span className="text-[10px] text-[#808080] uppercase tracking-wider">Trace</span>
                   <span className="text-xs font-mono text-blue">{selectedTrace.id}</span>
                 </div>
                 <div className="h-3 w-px bg-[#1E1E1E]" />
-                <span className="text-xs text-[#444]">{selectedTrace.spans.length} spans</span>
-                <span className="text-xs text-[#444]">{timeAgo(selectedTrace.timestamp)}</span>
+                <span className="text-xs text-[#808080]">{selectedTrace.spans.length} spans</span>
+                <span className="text-xs text-[#808080]">{timeAgo(selectedTrace.timestamp)}</span>
                 <Badge variant={selectedTrace.status === "error" ? "red" : "green"} size="sm">
                   {selectedTrace.status}
                 </Badge>
@@ -161,7 +167,7 @@ export default function TracesPage() {
                         "flex items-center gap-1.5 px-2.5 py-1 rounded border text-[10px] transition-colors",
                         criticalPath
                           ? "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#F59E0B]"
-                          : "border-[#1E1E1E] text-[#444] hover:text-[#888] hover:border-[#2A2A2A]"
+                          : "border-[#1E1E1E] text-[#808080] hover:text-[#888] hover:border-[#2A2A2A]"
                       )}
                     >
                       <GitBranch className="h-3 w-3" />
@@ -175,7 +181,7 @@ export default function TracesPage() {
                       onClick={() => setViewMode("flamegraph")}
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 text-[10px] rounded transition-colors",
-                        viewMode === "flamegraph" ? "bg-blue text-white" : "text-[#555] hover:text-[#888]"
+                        viewMode === "flamegraph" ? "bg-blue text-white" : "text-[#949494] hover:text-[#888]"
                       )}
                     >
                       <GitBranch className="h-3 w-3" />
@@ -185,7 +191,7 @@ export default function TracesPage() {
                       onClick={() => setViewMode("servicemap")}
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 text-[10px] rounded transition-colors",
-                        viewMode === "servicemap" ? "bg-blue text-white" : "text-[#555] hover:text-[#888]"
+                        viewMode === "servicemap" ? "bg-blue text-white" : "text-[#949494] hover:text-[#888]"
                       )}
                     >
                       <Map className="h-3 w-3" />
@@ -211,7 +217,7 @@ export default function TracesPage() {
               )}
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[#333] text-sm">
+            <div className="flex-1 flex items-center justify-center text-[#808080] text-sm">
               Select a trace to view the flame graph
             </div>
           )}
