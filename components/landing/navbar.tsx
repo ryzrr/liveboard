@@ -1,133 +1,119 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { LiveboardIcon } from "@/components/logo";
-import { GithubIcon } from "@/components/landing/github-icon";
+import { primaryButtonClass } from "@/components/landing/button-styles";
 
-const LINKS = [
-  { label: "Tracing", href: "#tracing" },
-  { label: "Endpoints", href: "#endpoints" },
-  { label: "Alerts", href: "#alerts" },
+const NAV_LINKS = [
   { label: "Features", href: "#features" },
-  { label: "Setup", href: "#how-it-works" },
+  { label: "Detection", href: "#detection" },
+  { label: "Status page", href: "#status" },
 ];
 
 const GITHUB_URL = "https://github.com/ryzrr/liveboard";
 
-export function LandingNavbar() {
-  const [open, setOpen] = useState(false);
+export function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { scrollY } = useScroll();
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  useMotionValueEvent(scrollY, "change", (latest) => setScrolled(latest > 8));
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:pt-4">
-      <nav
-        className={`flex w-full max-w-5xl items-center justify-between rounded-full px-2 py-2 pl-4 transition-all duration-300 ${
-          scrolled
-            ? "border border-white/10 bg-[#0A0A0B]/80 backdrop-blur-xl"
-            : "border border-transparent bg-transparent"
-        }`}
-      >
-        <Link href="/" className="flex items-center gap-2.5">
-          <LiveboardIcon size={20} />
-          <span className="font-display text-[15px] font-bold tracking-tight text-white">
-            Liveboard
-          </span>
-        </Link>
-
-        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full px-3.5 py-1.5 text-[13px] text-[#9a9aa4] transition-colors hover:text-white"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="hidden items-center gap-1.5 lg:flex">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#9a9aa4] transition-colors hover:text-white"
-            aria-label="View source on GitHub"
-          >
-            <GithubIcon className="h-4 w-4" />
-          </a>
-          <Link
-            href="/status"
-            className="rounded-full px-3 py-1.5 text-[13px] text-[#9a9aa4] transition-colors hover:text-white"
-          >
-            Status
-          </Link>
-          <Link
-            href="/auth/signin"
-            className="group ml-1 flex items-center gap-1.5 rounded-full bg-white py-1.5 pl-4 pr-3.5 text-[13px] font-medium text-[#0A0A0A] transition-transform hover:scale-[1.03] active:scale-95"
-          >
-            Get started
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="p-2 text-[#9a9aa4] lg:hidden"
-          aria-label="Toggle menu"
+    <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+      <div className="relative w-full max-w-6xl">
+        <div
+          className={`flex h-16 items-center justify-between border border-border bg-background/95 px-6 backdrop-blur-md transition-shadow duration-200 ${
+            scrolled ? "shadow-[0_12px_30px_-14px_rgba(0,0,0,0.6)]" : ""
+          }`}
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </nav>
+          <Link href="/" className="flex items-center gap-2.5">
+            <LiveboardIcon size={22} />
+            <span className="text-[15px] font-semibold tracking-tight text-foreground">Liveboard</span>
+          </Link>
 
-      {open && (
-        <div className="absolute inset-x-3 top-[70px] rounded-2xl border border-white/10 bg-[#0A0A0B]/95 p-5 backdrop-blur-xl lg:hidden">
-          <div className="flex flex-col gap-1">
-            {LINKS.map((link) => (
-              <Link
+          <nav className="hidden items-center gap-8 lg:flex">
+            {NAV_LINKS.map((link) => (
+              <a
                 key={link.href}
                 href={link.href}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] transition-colors hover:bg-white/5 hover:text-white"
+                className="text-[13px] text-muted transition-colors hover:text-foreground"
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
-            <Link
-              href="/status"
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] hover:bg-white/5 hover:text-white"
-            >
-              Status page
-            </Link>
+          </nav>
+
+          <div className="hidden items-center gap-5 lg:flex">
             <a
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg px-2 py-2.5 text-sm text-[#c4c4cc] hover:bg-white/5 hover:text-white"
+              className="flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-foreground"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- external brand mark, next/image needs SVG allow-listing for no benefit here */}
+              <img src="https://cdn.simpleicons.org/github/ffffff" alt="" width={14} height={14} className="opacity-70" />
               GitHub
             </a>
-            <Link
-              href="/auth/signin"
-              onClick={() => setOpen(false)}
-              className="mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13px] font-medium text-[#0A0A0A]"
-            >
-              Get started
-              <ArrowRight className="h-3.5 w-3.5" />
+            <Link href="/auth/signin" className={primaryButtonClass("sm")}>
+              Start monitoring
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
+
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-2 text-foreground lg:hidden"
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
-      )}
+
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: [0.19, 1, 0.22, 1] }}
+              className="absolute inset-x-0 top-[calc(100%+8px)] border border-border bg-background/98 backdrop-blur-md lg:hidden"
+            >
+              <div className="flex flex-col gap-1 px-6 py-4">
+                {NAV_LINKS.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="px-1 py-2.5 text-sm text-muted transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-1 py-2.5 text-sm text-muted transition-colors hover:text-foreground"
+                >
+                  GitHub
+                </a>
+                <Link
+                  href="/auth/signin"
+                  onClick={() => setMenuOpen(false)}
+                  className={primaryButtonClass("sm", "mt-2 w-full")}
+                >
+                  Start monitoring
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </header>
   );
 }
