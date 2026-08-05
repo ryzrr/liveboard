@@ -1,41 +1,60 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { GithubIcon } from "@/components/landing/github-icon";
-import { Reveal } from "@/components/landing/reveal";
+import { ArrowUpRight, Activity, Container } from "lucide-react";
+import { RevealOnScroll } from "@/components/landing/reveal-on-scroll";
 
 export function CtaSection() {
   return (
-    <section className="relative overflow-hidden border-t border-white/[0.06]">
-      {/* subtle monochrome focus + faint radar echo */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2">
-        <div className="absolute inset-0 rounded-full border border-white/[0.05]" />
-        <div className="absolute inset-[22%] rounded-full border border-white/[0.05]" />
-        <div className="absolute inset-[44%] rounded-full border border-white/[0.06]" />
-      </div>
-      <Reveal className="mx-auto max-w-3xl px-6 py-28 text-center">
-        <h2 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-          <span className="gradient-text">Ship with confidence.</span>
+    <section className="border-t border-border px-6 py-20 lg:py-28">
+      <RevealOnScroll className="mx-auto max-w-xl text-center">
+        <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.4rem] sm:leading-[1.15]">
+          One line of middleware. Zero blind spots.
         </h2>
-        <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-[#8a8a94]">
-          Open source, self-hostable, and free to start. Find out about the incident
-          before your customers do.
+        <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
+          Self-host the whole stack, or sign in and start right here.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/auth/signin">
-            <Button variant="primary" size="lg" className="group gap-2 transition-transform hover:scale-[1.03] active:scale-[0.98]">
-              Get started — it&apos;s free
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Button>
+      </RevealOnScroll>
+
+      <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
+        <RevealOnScroll>
+          <Link
+            href="/auth/signin"
+            className="group relative flex h-[280px] flex-col justify-between overflow-hidden border border-border p-7 transition-colors hover:border-muted"
+          >
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Start monitoring</h3>
+              <p className="mt-2 max-w-[26ch] text-[13.5px] leading-relaxed text-muted">
+                Create a project, copy your API key, install the SDK.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+              Start monitoring
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </span>
+            <Activity className="pointer-events-none absolute -bottom-8 -right-8 h-48 w-48 text-blue/10" strokeWidth={0.75} aria-hidden />
           </Link>
-          <a href="https://github.com/ryzrr/liveboard" target="_blank" rel="noreferrer">
-            <Button variant="secondary" size="lg" className="gap-2 transition-transform hover:scale-[1.03] active:scale-[0.98]">
-              <GithubIcon className="h-3.5 w-3.5" />
-              Star on GitHub
-            </Button>
+        </RevealOnScroll>
+
+        <RevealOnScroll delayMs={80}>
+          <a
+            href="https://github.com/ryzrr/liveboard"
+            target="_blank"
+            rel="noreferrer"
+            className="group relative flex h-[280px] flex-col justify-between overflow-hidden border border-border p-7 transition-colors hover:border-muted"
+          >
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Self-host with Docker Compose</h3>
+              <p className="mt-2 max-w-[26ch] text-[13.5px] leading-relaxed text-muted">
+                Docker Compose spins up Postgres, Redis, the API, and the worker in one command.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+              View on GitHub
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </span>
+            <Container className="pointer-events-none absolute -bottom-8 -right-8 h-48 w-48 text-foreground/[0.06]" strokeWidth={0.75} aria-hidden />
           </a>
-        </div>
-      </Reveal>
+        </RevealOnScroll>
+      </div>
     </section>
   );
 }

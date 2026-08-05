@@ -52,7 +52,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ]
       : []),
 
-    ...(process.env.NODE_ENV !== "production"
+    // Gated on two independent conditions, not just NODE_ENV: this provider
+    // authenticates as whatever email is typed in, with zero proof of
+    // ownership. NODE_ENV=production already excludes it from the real
+    // Docker image (see Dockerfile.frontend), but that's one setting one
+    // deploy path away from being wrong. DISABLE_DEV_LOGIN is a second,
+    // explicit switch for any non-production environment (staging, a demo
+    // box) that still holds real user data and is reachable over a network.
+    ...(process.env.NODE_ENV !== "production" && process.env.DISABLE_DEV_LOGIN !== "true"
       ? [
           Credentials({
             id: "dev-login",
@@ -64,10 +71,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             authorize(credentials) {
               if (!credentials?.email) return null;
               const email = credentials.email as string;
+              // Pass an empty field through as null rather than defaulting it
+              // to the email prefix here — the backend already falls back to
+              // the email prefix for brand-new users, and preserves the
+              // existing name (COALESCE) for returning ones. Resolving a
+              // default on the client would defeat that preservation on
+              // every subsequent sign-in.
+              const typedName = (credentials.name as string)?.trim();
               return {
                 id: email,
                 email,
-                name: (credentials.name as string) || email.split("@")[0],
+                name: typedName || null,
                 image: null,
               };
             },

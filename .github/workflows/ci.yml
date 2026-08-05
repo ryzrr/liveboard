@@ -34,7 +34,7 @@ jobs:
           cache: pip
 
       - working-directory: apps/api
-        run: pip install ruff && ruff check .
+        run: pip install ruff==0.15.17 && ruff check .
 
   sdk-js:
     name: SDK JS — Typecheck & Build
@@ -69,7 +69,7 @@ jobs:
           cache: pip
 
       - working-directory: packages/sdk-python
-        run: pip install ruff httpx && ruff check liveboard/
+        run: pip install ruff==0.15.17 httpx && ruff check liveboard/
 
       - working-directory: packages/sdk-python
         run: python -c "from liveboard import SDK_VERSION, LiveBoardConfig; print('import OK', SDK_VERSION)"

@@ -6,6 +6,8 @@
 
 # Next.js
 /.next/
+.agents
+.claude 
 /out/
 /build
 
@@ -19,7 +21,7 @@ next-env.d.ts
 .env.*.local
 # Note: .env.example is intentionally NOT listed here
 
-# ─── Python ──────────────────────────────────────────────────────────────────
+# ─── Python ─────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -55,4 +57,4 @@ Thumbs.db
 # ─── Confidential — never commit the build plan ──────────────────────────────
 *.pdf
 /checklist.md
-.env.example 
+.ground.md
