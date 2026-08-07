@@ -21,23 +21,23 @@ const SNIPPETS: SdkSnippet[] = [
   {
     key: "js",
     label: "JavaScript",
-    install: "npm install @liveboard/sdk",
+    install: "npm install liveboard-sdk",
     filename: "server.js",
     lines: [
-      [{ text: "import liveboard from " }, { text: '"@liveboard/sdk"', accent: true }, { text: ";" }],
+      [{ text: "import liveboard from " }, { text: '"liveboard-sdk"', accent: true }, { text: ";" }],
       [],
-      [{ text: "app.use(liveboard.express({ apiKey }));" }],
+      [{ text: "app.use(liveboard.middleware({ apiKey }));" }],
     ],
   },
   {
     key: "python",
     label: "Python",
-    install: "pip install liveboard",
+    install: "pip install liveboard-sdk",
     filename: "main.py",
     lines: [
-      [{ text: "from " }, { text: "liveboard.asgi", accent: true }, { text: " import LiveboardMiddleware" }],
+      [{ text: "from " }, { text: "liveboard.asgi", accent: true }, { text: " import LiveBoardMiddleware" }],
       [],
-      [{ text: "app.add_middleware(LiveboardMiddleware, api_key=key)" }],
+      [{ text: "app.add_middleware(LiveBoardMiddleware, api_key=key)" }],
     ],
   },
 ];
