@@ -1,6 +1,11 @@
 <div align="center">
 
-# Liveboard
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/wordmark.svg">
+  <img src="public/wordmark-light.svg" alt="Liveboard" height="48" />
+</picture>
+
+<br />
 
 **Know the moment your API breaks.**
 
