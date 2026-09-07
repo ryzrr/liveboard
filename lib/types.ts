@@ -42,15 +42,6 @@ export interface Endpoint {
   healthScore: number;
 }
 
-export interface ServiceStatus {
-  id: string;
-  name: string;
-  uptime90d: number;
-  currentStatus: "operational" | "degraded" | "partial_outage" | "major_outage";
-  responseTime: number;
-  uptimeBars: ("up" | "degraded" | "down")[];
-}
-
 export interface MetricPoint {
   time: string;
   value: number;

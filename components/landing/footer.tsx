@@ -13,7 +13,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Features", href: "#features" },
       { label: "Anomaly detection", href: "#detection" },
-      { label: "Status page", href: "#status" },
+      { label: "Self-hosting", href: "https://github.com/ryzrr/liveboard#quick-start", external: true },
     ],
   },
   {

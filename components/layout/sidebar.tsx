@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Zap,
-  Globe,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +15,6 @@ import { UserMenu } from "@/components/auth/user-menu";
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/endpoints", label: "Endpoints", icon: Zap },
-  { href: "/status", label: "Status Page", icon: Globe },
 ];
 
 export function Sidebar() {

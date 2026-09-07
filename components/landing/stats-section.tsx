@@ -14,7 +14,7 @@ export function StatsSection() {
           Built to be adopted in an afternoon.
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
-          No agents, no sidecars, no new infrastructure to run. Two SDKs, one line of middleware, and a status page for free.
+          No agents, no sidecars, no new infrastructure to run. Two SDKs, one line of middleware, and Docker Compose.
         </p>
       </RevealOnScroll>
 

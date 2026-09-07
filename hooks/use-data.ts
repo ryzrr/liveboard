@@ -14,7 +14,6 @@ import type {
   ChartData,
   Endpoint,
   Incident,
-  ServiceStatus,
 } from "@/lib/types";
 
 // ─── Raw API shapes (snake_case) ─────────────────────────────────────────────
@@ -40,15 +39,6 @@ interface ApiIncident {
   endpoint: string;
   timestamp: string;
   resolved: boolean;
-}
-
-interface ApiService {
-  id: string;
-  name: string;
-  uptime90d: number;
-  current_status: string;
-  response_time: number;
-  uptime_bars: string[];
 }
 
 // ─── Transforms ──────────────────────────────────────────────────────────────
@@ -80,17 +70,6 @@ function toIncidents(raw: unknown): Incident[] {
   }));
 }
 
-function toServices(raw: unknown): ServiceStatus[] {
-  return (raw as ApiService[]).map((s) => ({
-    id: s.id,
-    name: s.name,
-    uptime90d: s.uptime90d,
-    currentStatus: s.current_status as ServiceStatus["currentStatus"],
-    responseTime: s.response_time,
-    uptimeBars: s.uptime_bars as ServiceStatus["uptimeBars"],
-  }));
-}
-
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
 /** Request-volume and status-code breakdown for the overview charts. Polls every 30 s. */
@@ -117,9 +96,4 @@ export function useEndpoints(hours = 24) {
     EMPTY_LIST as unknown as Endpoint[],
     toEndpoints,
   );
-}
-
-/** Service health derived from route-prefix groups — used by the status page. */
-export function useServices() {
-  return useApiQuery<ServiceStatus[]>("/v1/services", {}, EMPTY_LIST as unknown as ServiceStatus[], toServices, 30_000);
 }

@@ -17,8 +17,6 @@ export interface Project {
   /** Masked display-only key hint: lb_live_abcd•••• */
   apiKeyMasked: string;
   createdAt: string;
-  statusPageEnabled: boolean;
-  publicSlug: string | null;
 }
 
 export interface CreateProjectResult {
@@ -35,7 +33,6 @@ interface ProjectContextValue {
   createProject: (name: string) => Promise<CreateProjectResult>;
   deleteProject: (id: string) => Promise<void>;
   rotateKey: (id: string) => Promise<string>;
-  setStatusPageEnabled: (id: string, enabled: boolean) => Promise<{ enabled: boolean; publicSlug: string | null }>;
   refresh: () => Promise<void>;
 }
 
@@ -46,8 +43,6 @@ interface ProjectDetailDTO {
   org_id: string;
   api_key_masked: string;
   created_at: string;
-  status_page_enabled: boolean;
-  public_slug: string | null;
 }
 
 function fromDTO(d: ProjectDetailDTO): Project {
@@ -56,8 +51,6 @@ function fromDTO(d: ProjectDetailDTO): Project {
     name: d.name,
     apiKeyMasked: d.api_key_masked,
     createdAt: d.created_at,
-    statusPageEnabled: d.status_page_enabled,
-    publicSlug: d.public_slug,
   };
 }
 
@@ -143,8 +136,6 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         name: data.project.name,
         apiKeyMasked: maskRaw(data.new_api_key),
         createdAt: new Date().toISOString(),
-        statusPageEnabled: false,
-        publicSlug: null,
       };
       return { project, rawApiKey: data.new_api_key };
     },
@@ -169,21 +160,6 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     return data.new_api_key;
   }, [refresh]);
 
-  const setStatusPageEnabled = useCallback(
-    async (id: string, enabled: boolean): Promise<{ enabled: boolean; publicSlug: string | null }> => {
-      const res = await fetch(`/api/projects/${id}/status-page`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ enabled }),
-      });
-      if (!res.ok) throw new Error("Failed to update status page setting");
-      const data = (await res.json()) as { enabled: boolean; public_slug: string | null };
-      await refresh();
-      return { enabled: data.enabled, publicSlug: data.public_slug };
-    },
-    [refresh]
-  );
-
   const activeProject =
     projects.find((p) => p.id === activeProjectId) ?? projects[0] ?? null;
 
@@ -197,7 +173,6 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         createProject,
         deleteProject,
         rotateKey,
-        setStatusPageEnabled,
         refresh,
       }}
     >

@@ -14,9 +14,5 @@ export const config = {
     "/overview/:path*",
     "/endpoints/:path*",
     "/settings/:path*",
-    // Exact match only — the authenticated status *preview*. Must NOT be a
-    // wildcard: /status/[slug], /status/confirm/[token], and
-    // /status/unsubscribe/[token] are intentionally public (no session).
-    "/status",
   ],
 };

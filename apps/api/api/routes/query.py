@@ -14,7 +14,6 @@ from api.deps import resolve_project_id, scoped_conn
 from api.schemas import (
     EndpointStat,
     IncidentOut,
-    ServiceStatusOut,
     TimeseriesPoint,
 )
 
@@ -168,8 +167,7 @@ async def get_endpoints(
 # ─── Incidents ───────────────────────────────────────────────────────────────
 
 async def fetch_incidents(conn: asyncpg.Connection, project_id: str) -> list[IncidentOut]:
-    """Recent incidents from the AI anomaly detection worker (Phase 5). Shared by the
-    authenticated dashboard route and the public status-page route."""
+    """Recent incidents written by the AI anomaly detection worker (Phase 5)."""
     rows = await conn.fetch(
         """
         SELECT id, severity, title, summary, endpoint, resolved, created_at
@@ -200,115 +198,3 @@ async def get_incidents(
     conn: asyncpg.Connection = Depends(scoped_conn),
 ) -> list[IncidentOut]:
     return await fetch_incidents(conn, project_id)
-
-
-
-def _service_name(prefix: str) -> str:
-    """Map a route prefix to a human-readable service name."""
-    segment = prefix.strip("/").split("/")[-1].lower()
-    _map = {
-        "auth": "Authentication",
-        "users": "User Service",
-        "user": "User Service",
-        "products": "Product Catalog",
-        "product": "Product Catalog",
-        "orders": "Order Management",
-        "order": "Order Management",
-        "payments": "Payments",
-        "payment": "Payments",
-        "search": "Search",
-        "webhooks": "Webhooks",
-        "analytics": "Analytics",
-    }
-    return _map.get(segment, prefix or "API")
-
-
-async def fetch_services(conn: asyncpg.Connection, project_id: str) -> list[ServiceStatusOut]:
-    """
-    Service health derived from route-prefix groups in event data.
-    Uptime bars represent up to 90 days; missing days default to 'up'.
-    Shared by the authenticated dashboard route and the public status-page route.
-    """
-    rows = await conn.fetch(
-        """
-        SELECT
-            '/' || split_part(route, '/', 2)                                         AS prefix,
-            time_bucket('1 day', time)                                                AS day,
-            AVG(duration_ms)::float                                                   AS avg_latency,
-            (SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END)::float / COUNT(*))  AS error_rate
-        FROM events
-        WHERE project_id = $1
-          AND time >= now() - INTERVAL '90 days'
-          AND route IS NOT NULL
-          AND route != ''
-        GROUP BY prefix, day
-        ORDER BY prefix, day
-        """,
-        project_id,
-    )
-
-    if not rows:
-        return []
-
-    by_prefix: dict[str, list[dict]] = {}
-    for row in rows:
-        p = row["prefix"] or "/unknown"
-        if p not in by_prefix:
-            by_prefix[p] = []
-        by_prefix[p].append(
-            {
-                "day": row["day"].date(),
-                "latency": row["avg_latency"] or 0.0,
-                "error_rate": row["error_rate"] or 0.0,
-            }
-        )
-
-    today = datetime.date.today()
-    result: list[ServiceStatusOut] = []
-
-    for i, (prefix, days) in enumerate(by_prefix.items()):
-        bar_map: dict[datetime.date, str] = {
-            d["day"]: (
-                "down" if d["error_rate"] > 0.1
-                else "degraded" if d["error_rate"] > 0.02
-                else "up"
-            )
-            for d in days
-        }
-
-        uptime_bars: list[str] = [
-            bar_map.get(today - datetime.timedelta(days=89 - j), "up")
-            for j in range(90)
-        ]
-
-        up_count = sum(1 for b in uptime_bars if b == "up")
-        uptime_pct = round(up_count / 90 * 100, 2)
-
-        latest_bar = bar_map.get(today) or bar_map.get(today - datetime.timedelta(days=1), "up")
-        current_status = {"up": "operational", "degraded": "degraded", "down": "major_outage"}[
-            latest_bar
-        ]
-
-        recent = sorted(days, key=lambda d: d["day"], reverse=True)
-        response_time = round(recent[0]["latency"], 1) if recent else 0.0
-
-        result.append(
-            ServiceStatusOut(
-                id=f"svc_{i:02d}",
-                name=_service_name(prefix),
-                uptime90d=uptime_pct,
-                current_status=current_status,
-                response_time=response_time,
-                uptime_bars=uptime_bars,
-            )
-        )
-
-    return result[:10]
-
-
-@router.get("/services", response_model=list[ServiceStatusOut])
-async def get_services(
-    project_id: str = Depends(resolve_project_id),
-    conn: asyncpg.Connection = Depends(scoped_conn),
-) -> list[ServiceStatusOut]:
-    return await fetch_services(conn, project_id)
