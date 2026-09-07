@@ -95,7 +95,7 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
                   Create project
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm text-[#949494]">
-                  A project groups API keys, events, and alert rules.
+                  A project groups API keys, events, and incidents.
                 </Dialog.Description>
               </div>
 

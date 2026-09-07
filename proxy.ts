@@ -13,8 +13,6 @@ export const config = {
   matcher: [
     "/overview/:path*",
     "/endpoints/:path*",
-    "/traces/:path*",
-    "/alerts/:path*",
     "/settings/:path*",
     // Exact match only — the authenticated status *preview*. Must NOT be a
     // wildcard: /status/[slug], /status/confirm/[token], and

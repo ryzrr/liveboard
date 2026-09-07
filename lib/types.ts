@@ -42,20 +42,6 @@ export interface Endpoint {
   healthScore: number;
 }
 
-export interface AlertRule {
-  id: string;
-  name: string;
-  metric: string;
-  operator: ">" | "<" | "=" | "!=";
-  threshold: number;
-  window: number;
-  severity: "critical" | "warning" | "info";
-  channel: string;
-  status: "firing" | "ok" | "pending";
-  lastTriggered?: Date;
-  enabled: boolean;
-}
-
 export interface ServiceStatus {
   id: string;
   name: string;

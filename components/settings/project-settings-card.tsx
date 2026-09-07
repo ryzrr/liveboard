@@ -208,7 +208,7 @@ export function ProjectSettingsCard({ project }: Props) {
             <div className="space-y-2">
               <p className="text-[10px] text-[#949494]">
                 This permanently deletes <span className="text-[#F5F5F5] font-medium">{project.name}</span> and
-                all its events, alert rules, and API keys. Type the project name to confirm.
+                all its events, incidents, and API keys. Type the project name to confirm.
               </p>
               <input
                 value={deleteConfirmText}

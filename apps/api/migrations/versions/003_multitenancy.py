@@ -18,7 +18,7 @@ the app (Phase 8.2) and, later, Postgres RLS (Phase 8.4).
 from alembic import op
 
 revision = "003"
-down_revision = "002"
+down_revision = "001"
 branch_labels = None
 depends_on = None
 

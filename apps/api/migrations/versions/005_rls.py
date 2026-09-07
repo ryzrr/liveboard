@@ -12,7 +12,7 @@ Design (single DB owner + a multi-project worker):
   • Dashboard READ connections `SET ROLE dashboard_reader` + set the
     `app.project_id` GUC (see api.deps.scoped_conn). Non-owner ⇒ RLS is
     enforced ⇒ only rows for the active project are visible.
-  • The owner (ingest worker, alert writes) is NOT forced under RLS, so
+  • The owner (ingest worker, incident writes) is NOT forced under RLS, so
     cross-project writes/aggregation keep working.
 
 A read that forgets to set `app.project_id` sees ZERO rows (fail closed).
@@ -25,7 +25,7 @@ down_revision = "004"
 branch_labels = None
 depends_on = None
 
-_TABLES = ["events", "incidents", "alert_rules", "alert_history"]
+_TABLES = ["events", "incidents"]
 
 
 def upgrade() -> None:
@@ -46,7 +46,7 @@ def upgrade() -> None:
         op.execute(f"GRANT SELECT ON {t} TO dashboard_reader;")
         op.execute(f"ALTER TABLE {t} ENABLE ROW LEVEL SECURITY;")
         # Scoped SELECT policy — applies only to dashboard_reader; the owner
-        # (worker/ingest/alert writes) is unaffected.
+        # (worker/ingest/incident writes) is unaffected.
         op.execute(f"""
             CREATE POLICY {t}_tenant_isolation ON {t}
                 FOR SELECT
