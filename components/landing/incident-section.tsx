@@ -18,7 +18,7 @@ export function IncidentSection() {
     <section id="detection" className="border-t border-border px-6 py-20 lg:py-28">
       <RevealOnScroll className="mx-auto max-w-xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.4rem] sm:leading-[1.15]">
-          It writes the postmortem before you open the trace.
+          It writes the postmortem before you open the dashboard.
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
           A rolling z-score model flags anomalies in error rate and p99 latency, then writes a plain-English summary automatically.

@@ -43,7 +43,7 @@ export function Hero() {
         </motion.h1>
 
         <motion.p variants={item} className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-muted">
-          Real-time traces, live error tracking, and AI-written incident summaries, wired up with one line of middleware.
+          Live request metrics, error tracking, and AI-written incident summaries, wired up with one line of middleware.
         </motion.p>
 
         <motion.div variants={item} className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

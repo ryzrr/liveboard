@@ -25,7 +25,7 @@ down_revision = "004"
 branch_labels = None
 depends_on = None
 
-_TABLES = ["events", "spans", "incidents", "alert_rules", "alert_history"]
+_TABLES = ["events", "incidents", "alert_rules", "alert_history"]
 
 
 def upgrade() -> None:

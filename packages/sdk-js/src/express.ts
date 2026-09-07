@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "http";
 import type { LiveBoardConfig } from "./types";
 import { resolveConfig, shouldIgnore, shouldSample } from "./config";
 import { getRoute } from "./normalise";
-import { EventBuffer, SpanBuffer } from "./buffer";
+import { EventBuffer } from "./buffer";
 import { SDK_VERSION } from "./version";
 
 // Minimal Express-compatible types — avoids a hard @types/express dependency
@@ -25,9 +25,6 @@ export function createExpressMiddleware(config: LiveBoardConfig): Middleware {
     resolved.batchSize,
     resolved.flushInterval
   );
-  const spanBuffer = resolved.tracing
-    ? new SpanBuffer(resolved.ingestUrl, resolved.apiKey, resolved.batchSize, resolved.flushInterval)
-    : null;
 
   return function liveboardMiddleware(
     req: IncomingMessage,
@@ -35,20 +32,11 @@ export function createExpressMiddleware(config: LiveBoardConfig): Middleware {
     next: NextFunction
   ): void {
     const startMs = Date.now();
-    // Propagate incoming trace ID from upstream service, or start a new trace
+    // Reuse an upstream request's correlation id when present, else mint one.
+    // Echoed back on the response so a caller can correlate its own logs.
     const incoming = req.headers["x-trace-id"];
     const traceId = (typeof incoming === "string" && incoming) ? incoming : randomUUID();
-
-    // If an upstream instrumented service passed its span id, parent to it.
-    const incomingParent = req.headers["x-parent-span-id"];
-    const parentId = typeof incomingParent === "string" && incomingParent ? incomingParent : undefined;
-
-    // This request's root span id — propagated to downstream services so they
-    // can attach their spans under it (enables cross-service traces).
-    const spanId = randomUUID();
-
     res.setHeader("x-trace-id", traceId);
-    res.setHeader("x-parent-span-id", spanId);
 
     res.on("finish", () => {
       const route = getRoute(req);
@@ -74,21 +62,6 @@ export function createExpressMiddleware(config: LiveBoardConfig): Middleware {
             : undefined,
         sdk_version: SDK_VERSION,
       });
-
-      // Emit a root span for this request → powers the trace / flame-graph view.
-      if (spanBuffer) {
-        spanBuffer.add({
-          span_id: spanId,
-          trace_id: traceId,
-          parent_id: parentId,
-          service_name: resolved.service,
-          operation: `${method} ${route}`,
-          start_time: new Date(startMs).toISOString(),
-          duration_ms: durationMs,
-          status_code: statusCode,
-          tags: { method, route },
-        });
-      }
     });
 
     next();

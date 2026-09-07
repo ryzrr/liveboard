@@ -82,29 +82,6 @@ class IncidentOut(BaseModel):
     resolved: bool
 
 
-class SpanOut(BaseModel):
-    id: str
-    trace_id: str
-    parent_id: Optional[str]
-    service: str
-    name: str
-    start_time: int
-    duration: int
-    status: str
-    tags: dict
-
-
-class TraceOut(BaseModel):
-    id: str
-    root_span: str
-    service: str
-    endpoint: str
-    total_duration: int
-    timestamp: str
-    status: str
-    spans: list[SpanOut]
-
-
 class ServiceStatusOut(BaseModel):
     id: str
     name: str
@@ -112,35 +89,6 @@ class ServiceStatusOut(BaseModel):
     current_status: str
     response_time: float
     uptime_bars: list[str]
-
-
-# ─── Span ingest ─────────────────────────────────────────────────────────────
-
-class SpanIn(BaseModel):
-    span_id: str
-    trace_id: str
-    parent_id: Optional[str] = None
-    service_name: str = Field(default="unknown", max_length=100)
-    operation: str = Field(..., min_length=1, max_length=200)
-    start_time: datetime
-    duration_ms: int = Field(..., ge=0)
-    status_code: int = Field(default=200, ge=100, le=599)
-    tags: dict = Field(default_factory=dict)
-
-    @field_validator("start_time", mode="before")
-    @classmethod
-    def ensure_utc(cls, v: datetime) -> datetime:
-        if isinstance(v, datetime) and v.tzinfo is None:
-            return v.replace(tzinfo=timezone.utc)
-        return v
-
-
-class SpanBatchRequest(BaseModel):
-    spans: list[SpanIn] = Field(..., min_length=1, max_length=500)
-
-
-class SpanBatchResponse(BaseModel):
-    accepted: int
 
 
 # ─── Alert rules ─────────────────────────────────────────────────────────────

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Zap,
-  GitBranch,
   Bell,
   Globe,
   Settings,
@@ -18,7 +17,6 @@ import { UserMenu } from "@/components/auth/user-menu";
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/endpoints", label: "Endpoints", icon: Zap },
-  { href: "/traces", label: "Traces", icon: GitBranch },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/status", label: "Status Page", icon: Globe },
 ];

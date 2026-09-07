@@ -1,4 +1,4 @@
-"""Initial schema — users, projects, events hypertable, spans, incidents
+"""Initial schema — users, projects, events hypertable, incidents
 
 Revision ID: 001
 Revises:
@@ -63,24 +63,6 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS idx_events_project_time ON events(project_id, time DESC);")
     op.execute("CREATE INDEX IF NOT EXISTS idx_events_route ON events(project_id, route, time DESC);")
 
-    # ── Spans (distributed tracing — populated from Phase 6) ─────────────────
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS spans (
-            span_id      UUID        PRIMARY KEY,
-            trace_id     UUID        NOT NULL,
-            parent_id    UUID,
-            project_id   UUID        NOT NULL,
-            service_name TEXT,
-            operation    TEXT,
-            start_time   TIMESTAMPTZ,
-            duration_ms  INTEGER,
-            status_code  SMALLINT,
-            tags         JSONB
-        );
-    """)
-    op.execute("CREATE INDEX IF NOT EXISTS idx_spans_trace ON spans(trace_id);")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_spans_project ON spans(project_id, start_time DESC);")
-
     # ── 1-minute continuous aggregate ────────────────────────────────────────
     op.execute("""
         CREATE MATERIALIZED VIEW IF NOT EXISTS events_1min
@@ -129,7 +111,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS incidents;")
     op.execute("DROP MATERIALIZED VIEW IF EXISTS events_1min;")
-    op.execute("DROP TABLE IF EXISTS spans;")
     op.execute("DROP TABLE IF EXISTS events;")
     op.execute("DROP TABLE IF EXISTS projects;")
     op.execute("DROP TABLE IF EXISTS users;")

@@ -37,7 +37,7 @@ export function Footer() {
               <span className="text-[15px] font-semibold text-foreground">Liveboard</span>
             </div>
             <p className="mt-3 max-w-[240px] text-[13px] leading-relaxed text-muted">
-              Open source API observability. Traces, alerts, and AI incident summaries from one line of middleware.
+              Open source API observability. Live metrics, alerts, and AI incident summaries from one line of middleware.
             </p>
           </div>
 

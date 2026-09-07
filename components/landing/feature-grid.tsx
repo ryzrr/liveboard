@@ -11,7 +11,7 @@ export function FeatureGrid() {
           Every request, instrumented.
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
-          Distributed traces, per-endpoint health scores, and alerts routed to the tools your team already uses.
+          Live request metrics, per-endpoint health scores, and alerts routed to the tools your team already uses.
         </p>
       </RevealOnScroll>
 
@@ -22,14 +22,14 @@ export function FeatureGrid() {
       <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4">
         <RevealOnScroll className="grid grid-cols-1 gap-0 border border-border md:grid-cols-[1.3fr_1fr]">
           <ScreenshotFrame
-            src="/shots/traces.png"
-            alt="Distributed trace flame graph showing spans across api-gateway, auth-service, product-service, and payment-service"
+            src="/shots/overview.png"
+            alt="Liveboard overview dashboard with live request volume, response code distribution, and the live request log"
             className="aspect-[3040/1900] w-full border-b border-border md:aspect-auto md:h-full md:border-b-0 md:border-r"
           />
           <div className="flex flex-col justify-center p-7 md:min-h-[320px]">
-            <h3 className="text-lg font-semibold text-foreground">Distributed tracing</h3>
+            <h3 className="text-lg font-semibold text-foreground">Live request stream</h3>
             <p className="mt-2.5 text-[14px] leading-relaxed text-muted">
-              Flame graphs and service maps for every request, down to the individual span. Trace IDs propagate across all five SDK adapters automatically.
+              Request volume, response codes, and a tailing log of every call — pushed to the browser over Socket.io and SSE as the traffic happens, not on a refresh timer.
             </p>
           </div>
         </RevealOnScroll>

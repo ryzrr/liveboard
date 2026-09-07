@@ -10,7 +10,7 @@ Introduces the tenancy identity layer:
   projects.org_id — every project now belongs to exactly one org
 
 Telemetry tables already carry project_id, so an org owns its data
-transitively (org -> projects -> events/spans/incidents). This migration
+transitively (org -> projects -> events/incidents). This migration
 only adds the *ownership* layer; read-time authorization is enforced in
 the app (Phase 8.2) and, later, Postgres RLS (Phase 8.4).
 """

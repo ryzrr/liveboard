@@ -5,7 +5,6 @@ All use x-api-key header auth via resolve_project_id dependency.
 from __future__ import annotations
 
 import datetime
-import json
 import logging
 
 import asyncpg
@@ -16,9 +15,7 @@ from api.schemas import (
     EndpointStat,
     IncidentOut,
     ServiceStatusOut,
-    SpanOut,
     TimeseriesPoint,
-    TraceOut,
 )
 
 router = APIRouter(prefix="/v1", tags=["query"])
@@ -205,105 +202,6 @@ async def get_incidents(
     return await fetch_incidents(conn, project_id)
 
 
-# ─── Traces ──────────────────────────────────────────────────────────────────
-
-@router.get("/traces", response_model=list[TraceOut])
-async def get_traces(
-    hours: int = Query(24, ge=1, le=168),
-    project_id: str = Depends(resolve_project_id),
-    conn: asyncpg.Connection = Depends(scoped_conn),
-) -> list[TraceOut]:
-    """
-    Recent distributed traces assembled from the spans table, within the
-    last `hours` (default 24, matching Endpoints/Overview's picker). This
-    used to hardcode 24h with no way to widen it and no indication to the
-    viewer that a window even existed — a project with real spans older than
-    a day would just show an empty page with no explanation.
-    """
-    rows = await conn.fetch(
-        """
-        WITH recent_traces AS (
-            SELECT DISTINCT trace_id
-            FROM spans
-            WHERE project_id = $1
-              AND start_time >= now() - ($2 * INTERVAL '1 hour')
-            LIMIT 20
-        )
-        SELECT
-            s.span_id,
-            s.trace_id,
-            s.parent_id,
-            s.service_name,
-            s.operation,
-            s.start_time,
-            s.duration_ms,
-            s.status_code,
-            s.tags,
-            MIN(s.start_time)   OVER (PARTITION BY s.trace_id) AS trace_start,
-            SUM(s.duration_ms)  OVER (PARTITION BY s.trace_id) AS total_duration,
-            BOOL_OR(s.status_code >= 500) OVER (PARTITION BY s.trace_id) AS has_error
-        FROM spans s
-        JOIN recent_traces rt ON rt.trace_id = s.trace_id
-        WHERE s.project_id = $1
-        ORDER BY trace_start DESC, s.start_time
-        """,
-        project_id,
-        hours,
-    )
-
-    # Group spans into traces
-    traces: dict[str, dict] = {}
-    for row in rows:
-        tid = str(row["trace_id"])
-        if tid not in traces:
-            traces[tid] = {
-                "id": tid,
-                "trace_start": row["trace_start"],
-                "total_duration": int(row["total_duration"] or 0),
-                "has_error": bool(row["has_error"]),
-                "spans": [],
-            }
-        trace_start_ms = int(row["trace_start"].timestamp() * 1000)
-        span_start_ms = (
-            int(row["start_time"].timestamp() * 1000) if row["start_time"] else trace_start_ms
-        )
-        traces[tid]["spans"].append(
-            SpanOut(
-                id=str(row["span_id"]),
-                trace_id=tid,
-                parent_id=str(row["parent_id"]) if row["parent_id"] else None,
-                service=row["service_name"] or "unknown",
-                name=row["operation"] or "unknown",
-                start_time=max(0, span_start_ms - trace_start_ms),
-                duration=int(row["duration_ms"] or 0),
-                status="error" if (row["status_code"] and row["status_code"] >= 500) else "ok",
-                # asyncpg returns JSONB as a string — parse it back to a dict.
-                tags=(json.loads(row["tags"]) if isinstance(row["tags"], str) else (row["tags"] or {})),
-            )
-        )
-
-    result: list[TraceOut] = []
-    for t in traces.values():
-        spans = t["spans"]
-        root = next((s for s in spans if s.parent_id is None), spans[0] if spans else None)
-        if not root:
-            continue
-        result.append(
-            TraceOut(
-                id=t["id"],
-                root_span=root.id,
-                service=root.service,
-                endpoint=root.name,
-                total_duration=t["total_duration"],
-                timestamp=t["trace_start"].isoformat(),
-                status="error" if t["has_error"] else "ok",
-                spans=spans,
-            )
-        )
-    return result
-
-
-# ─── Services ────────────────────────────────────────────────────────────────
 
 def _service_name(prefix: str) -> str:
     """Map a route prefix to a human-readable service name."""

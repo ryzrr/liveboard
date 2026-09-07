@@ -18,8 +18,6 @@ import type {
   Endpoint,
   Incident,
   ServiceStatus,
-  Trace,
-  TraceSpan,
 } from "@/lib/types";
 
 // ─── Raw API shapes (snake_case) ─────────────────────────────────────────────
@@ -45,29 +43,6 @@ interface ApiIncident {
   endpoint: string;
   timestamp: string;
   resolved: boolean;
-}
-
-interface ApiSpan {
-  id: string;
-  trace_id: string;
-  parent_id?: string;
-  service: string;
-  name: string;
-  start_time: number;
-  duration: number;
-  status: string;
-  tags: Record<string, string>;
-}
-
-interface ApiTrace {
-  id: string;
-  root_span: string;
-  service: string;
-  endpoint: string;
-  total_duration: number;
-  timestamp: string;
-  status: string;
-  spans: ApiSpan[];
 }
 
 interface ApiService {
@@ -108,31 +83,6 @@ function toIncidents(raw: unknown): Incident[] {
   }));
 }
 
-function toTraces(raw: unknown): Trace[] {
-  return (raw as ApiTrace[]).map((t) => ({
-    id: t.id,
-    rootSpan: t.root_span,
-    service: t.service,
-    endpoint: t.endpoint,
-    totalDuration: t.total_duration,
-    timestamp: new Date(t.timestamp),
-    status: t.status as Trace["status"],
-    spans: t.spans.map(
-      (s): TraceSpan => ({
-        id: s.id,
-        traceId: s.trace_id,
-        parentId: s.parent_id,
-        service: s.service,
-        name: s.name,
-        startTime: s.start_time,
-        duration: s.duration,
-        status: s.status as TraceSpan["status"],
-        tags: s.tags,
-      })
-    ),
-  }));
-}
-
 function toServices(raw: unknown): ServiceStatus[] {
   return (raw as ApiService[]).map((s) => ({
     id: s.id,
@@ -169,16 +119,6 @@ export function useEndpoints(hours = 24) {
     { hours: String(hours) },
     EMPTY_LIST as unknown as Endpoint[],
     toEndpoints,
-  );
-}
-
-/** Distributed traces from the spans table. */
-export function useTraces(hours = 24) {
-  return useApiQuery<Trace[]>(
-    "/v1/traces",
-    { hours: String(hours) },
-    EMPTY_LIST as unknown as Trace[],
-    toTraces,
   );
 }
 

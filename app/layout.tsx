@@ -14,7 +14,7 @@ import { ProjectProvider } from "@/components/providers/project-provider";
 
 export const metadata: Metadata = {
   title: "Liveboard — API Observability",
-  description: "Real-time API observability, distributed traces, and intelligent alerts",
+  description: "Real-time API observability, live error tracking, and intelligent alerts",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

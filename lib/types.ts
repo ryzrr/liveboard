@@ -42,29 +42,6 @@ export interface Endpoint {
   healthScore: number;
 }
 
-export interface TraceSpan {
-  id: string;
-  traceId: string;
-  parentId?: string;
-  service: string;
-  name: string;
-  startTime: number;
-  duration: number;
-  status: "ok" | "error";
-  tags: Record<string, string>;
-}
-
-export interface Trace {
-  id: string;
-  rootSpan: string;
-  service: string;
-  endpoint: string;
-  totalDuration: number;
-  timestamp: Date;
-  status: "ok" | "error";
-  spans: TraceSpan[];
-}
-
 export interface AlertRule {
   id: string;
   name: string;
