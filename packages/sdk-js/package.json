@@ -1,7 +1,7 @@
 {
   "name": "liveboard-sdk",
   "version": "0.1.0",
-  "description": "LiveBoard SDK — zero-config API observability for Express, Fastify, and more",
+  "description": "LiveBoard SDK — zero-config API observability for Express",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src"
   },
-  "keywords": ["api", "observability", "monitoring", "express", "fastify", "liveboard"],
+  "keywords": ["api", "observability", "monitoring", "express", "liveboard"],
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.0.0",
@@ -32,11 +32,9 @@
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
-    "express": ">=4.0.0",
-    "fastify": ">=4.0.0"
+    "express": ">=4.0.0"
   },
   "peerDependenciesMeta": {
-    "express": { "optional": true },
-    "fastify": { "optional": true }
+    "express": { "optional": true }
   }
 }

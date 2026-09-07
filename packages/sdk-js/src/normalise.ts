@@ -29,18 +29,14 @@ export function normaliseUrl(rawUrl: string): string {
 
 /**
  * Get the route pattern from a request.
- * Prefers the framework's own route pattern (Express: req.route.path,
- * Fastify: req.routerPath) — falls back to regex normalisation.
+ * Prefers the framework's own route pattern (Express: req.route.path) and
+ * falls back to regex normalisation.
  */
 export function getRoute(req: IncomingMessage): string {
   // Express attaches matched route pattern to req.route
   const expressBase: string = (req as any).baseUrl ?? "";
   const expressRoute: string = (req as any).route?.path ?? "";
   if (expressRoute) return expressBase + expressRoute;
-
-  // Fastify attaches routerPath
-  const fastifyPath: string = (req as any).routerPath ?? "";
-  if (fastifyPath) return fastifyPath;
 
   // Fallback: normalise the raw URL
   return normaliseUrl(req.url ?? "/");
