@@ -1,7 +1,7 @@
 """Multi-tenancy: organizations, memberships, projects.org_id
 
-Revision ID: 003
-Revises: 002
+Revision ID: 002
+Revises: 001
 Create Date: 2026-07-18
 
 Introduces the tenancy identity layer:
@@ -17,7 +17,7 @@ the app (Phase 8.2) and, later, Postgres RLS (Phase 8.4).
 
 from alembic import op
 
-revision = "003"
+revision = "002"
 down_revision = "001"
 branch_labels = None
 depends_on = None

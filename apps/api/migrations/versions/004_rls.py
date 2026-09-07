@@ -1,7 +1,7 @@
 """Row-Level Security backstop for tenant isolation
 
-Revision ID: 005
-Revises: 004
+Revision ID: 004
+Revises: 003
 Create Date: 2026-07-18
 
 Defense-in-depth: even if an app query forgets its `WHERE project_id = …`,
@@ -20,8 +20,8 @@ A read that forgets to set `app.project_id` sees ZERO rows (fail closed).
 
 from alembic import op
 
-revision = "005"
-down_revision = "004"
+revision = "004"
+down_revision = "003"
 branch_labels = None
 depends_on = None
 
