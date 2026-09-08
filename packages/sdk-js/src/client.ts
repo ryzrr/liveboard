@@ -1,4 +1,4 @@
-import type { IngestBatch, SpanBatch } from "./types";
+import type { IngestBatch } from "./types";
 import * as https from "https";
 import * as http from "http";
 
@@ -47,9 +47,4 @@ function post(ingestUrl: string, path: string, apiKey: string, payload: unknown)
 /** POST a batch of request events to /v1/ingest. */
 export function sendBatch(ingestUrl: string, apiKey: string, batch: IngestBatch): void {
   post(ingestUrl, "/v1/ingest", apiKey, batch);
-}
-
-/** POST a batch of spans to /v1/spans. */
-export function sendSpans(ingestUrl: string, apiKey: string, batch: SpanBatch): void {
-  post(ingestUrl, "/v1/spans", apiKey, batch);
 }

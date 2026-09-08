@@ -42,52 +42,6 @@ export interface Endpoint {
   healthScore: number;
 }
 
-export interface TraceSpan {
-  id: string;
-  traceId: string;
-  parentId?: string;
-  service: string;
-  name: string;
-  startTime: number;
-  duration: number;
-  status: "ok" | "error";
-  tags: Record<string, string>;
-}
-
-export interface Trace {
-  id: string;
-  rootSpan: string;
-  service: string;
-  endpoint: string;
-  totalDuration: number;
-  timestamp: Date;
-  status: "ok" | "error";
-  spans: TraceSpan[];
-}
-
-export interface AlertRule {
-  id: string;
-  name: string;
-  metric: string;
-  operator: ">" | "<" | "=" | "!=";
-  threshold: number;
-  window: number;
-  severity: "critical" | "warning" | "info";
-  channel: string;
-  status: "firing" | "ok" | "pending";
-  lastTriggered?: Date;
-  enabled: boolean;
-}
-
-export interface ServiceStatus {
-  id: string;
-  name: string;
-  uptime90d: number;
-  currentStatus: "operational" | "degraded" | "partial_outage" | "major_outage";
-  responseTime: number;
-  uptimeBars: ("up" | "degraded" | "down")[];
-}
-
 export interface MetricPoint {
   time: string;
   value: number;

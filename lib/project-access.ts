@@ -13,7 +13,7 @@ function internalToken(): string {
  * session (as `session.projectIds` used to) meant any project created after
  * login was invisible to every dashboard read and realtime connection until
  * the user signed out and back in. This mirrors the same "ask the backend,
- * not a stale cache" pattern already used by rotate/delete/status-page BFF
+ * not a stale cache" pattern already used by the rotate/delete BFF
  * routes (`_require_member` on the backend side).
  */
 export async function verifyProjectAccess(email: string, projectId: string): Promise<boolean> {

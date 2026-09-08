@@ -1,6 +1,5 @@
 import { RevealOnScroll } from "@/components/landing/reveal-on-scroll";
 import { ScreenshotFrame } from "@/components/landing/screenshot-frame";
-import { ALERT_CHANNELS, ChannelMarkIcon } from "@/components/landing/channel-marks";
 import { InstallSnippet } from "@/components/landing/install-snippet";
 
 export function FeatureGrid() {
@@ -11,7 +10,7 @@ export function FeatureGrid() {
           Every request, instrumented.
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
-          Distributed traces, per-endpoint health scores, and alerts routed to the tools your team already uses.
+          Live request metrics, per-endpoint health scores, and AI incident summaries — from one line of middleware.
         </p>
       </RevealOnScroll>
 
@@ -22,14 +21,14 @@ export function FeatureGrid() {
       <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4">
         <RevealOnScroll className="grid grid-cols-1 gap-0 border border-border md:grid-cols-[1.3fr_1fr]">
           <ScreenshotFrame
-            src="/shots/traces.png"
-            alt="Distributed trace flame graph showing spans across api-gateway, auth-service, product-service, and payment-service"
+            src="/shots/overview.png"
+            alt="Liveboard overview dashboard with live request volume, response code distribution, and the live request log"
             className="aspect-[3040/1900] w-full border-b border-border md:aspect-auto md:h-full md:border-b-0 md:border-r"
           />
           <div className="flex flex-col justify-center p-7 md:min-h-[320px]">
-            <h3 className="text-lg font-semibold text-foreground">Distributed tracing</h3>
+            <h3 className="text-lg font-semibold text-foreground">Live request stream</h3>
             <p className="mt-2.5 text-[14px] leading-relaxed text-muted">
-              Flame graphs and service maps for every request, down to the individual span. Trace IDs propagate across all five SDK adapters automatically.
+              Request volume, response codes, and a tailing log of every call — pushed to the browser over Socket.io and SSE as the traffic happens, not on a refresh timer.
             </p>
           </div>
         </RevealOnScroll>
@@ -52,19 +51,24 @@ export function FeatureGrid() {
 
           <RevealOnScroll delayMs={140} className="flex flex-col justify-between border border-border p-6">
             <div>
-              <h3 className="text-base font-semibold text-foreground">Alerts that reach your team</h3>
+              <h3 className="text-base font-semibold text-foreground">Anomalies, not thresholds</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-muted">
-                Threshold rules on error rate or latency, routed to the channel your on-call rotation actually watches.
+                A rolling z-score over the last 24 hours of error rate and p99 latency decides what is actually unusual for your API — no thresholds to tune, no alert fatigue.
               </p>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              {ALERT_CHANNELS.map((channel) => (
-                <div key={channel.key} className="flex items-center gap-2 border border-border-subtle px-3 py-2.5">
-                  <ChannelMarkIcon channel={channel} className="h-4 w-4 flex-shrink-0 text-muted" />
-                  <span className="text-[12.5px] text-foreground">{channel.label}</span>
+            <dl className="mt-6 grid grid-cols-2 gap-3">
+              {[
+                { term: "Window", detail: "24 h rolling" },
+                { term: "Trigger", detail: "|z| > 3" },
+                { term: "Rate limit", detail: "10 / project / h" },
+                { term: "Summary", detail: "llama-3.3-70b" },
+              ].map((stat) => (
+                <div key={stat.term} className="border border-border-subtle px-3 py-2.5">
+                  <dt className="text-[11px] uppercase tracking-wider text-muted">{stat.term}</dt>
+                  <dd className="mt-0.5 font-mono text-[12.5px] text-foreground">{stat.detail}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </RevealOnScroll>
         </div>
       </div>

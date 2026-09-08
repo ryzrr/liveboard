@@ -9,7 +9,7 @@
 
 **Know the moment your API breaks.**
 
-Real-time traces, live error tracking, and AI-written incident summaries — wired up with one line of middleware.
+Live request metrics, error tracking, and AI-written incident summaries — wired up with one line of middleware.
 
 Open source. Self-hostable. No agents, no sidecars.
 
@@ -36,13 +36,13 @@ Open source. Self-hostable. No agents, no sidecars.
 
 ## What is Liveboard?
 
-Liveboard is a self-hostable API observability platform — the open-source pieces you'd otherwise assemble from Datadog, Sentry, and a status page tool. Drop one line of middleware into an Express, Fastify, FastAPI, Django, or Flask app and get live request metrics, distributed traces, error tracking, AI-generated incident summaries, alert rules, and a public status page — all streaming in real time over WebSockets/SSE.
+Liveboard is a self-hostable API observability platform — the open-source pieces you'd otherwise assemble from Datadog and Sentry. Drop one line of middleware into an Express or FastAPI app and get live request metrics, per-endpoint latency percentiles, error tracking, and AI-generated incident summaries — all streaming in real time over WebSockets/SSE.
 
 - **60-second onboarding** — `npm install liveboard-sdk` or `pip install liveboard-sdk`, one line of middleware, data on the dashboard in under 90 seconds.
 - **User-centric observability** — every event is tagged with `user_id`, so you can see exactly *which* users are hitting errors, not just aggregate rates.
 - **AI incident summaries** — a rolling z-score detector flags anomalies in error rate and p99 latency, then an LLM (Cerebras `llama-3.3-70b`) writes a plain-English summary of what happened.
-- **OpenTelemetry-flavored tracing** — trace IDs propagate across all five SDK adapters into a flame graph and service map, no collector required.
-- **Auto-generated public status page** — 90-day uptime bars, incident timelines, and email subscriptions, derived from the same live data.
+- **Built for throughput** — events land in a Redis Stream and a consumer-group worker bulk-writes them into TimescaleDB with the `COPY` protocol, sized for 120K events/min on one box.
+- **Multi-tenant from day one** — organizations, per-project API keys, and Postgres Row-Level Security as a database-level isolation backstop.
 
 <a id="features"></a>
 
@@ -50,16 +50,13 @@ Liveboard is a self-hostable API observability platform — the open-source piec
 
 | | |
 |---|---|
-| 📊 **Live dashboard** | Request volume, stacked 2xx/4xx/5xx error rate, animated stat cards with sparklines — all pushed over WebSockets as traffic happens. |
-| 🔎 **Endpoint explorer** | Sortable table with p50/p95/p99, health scores, latency histograms, top errors and top affected users per route. Side-by-side endpoint comparison mode. |
-| 🔥 **Distributed traces** | Flame graphs, span detail panels, critical-path highlighting, and a pure-SVG service dependency map. |
-| 🚨 **Alert rules** | Metric + operator + threshold + window rule builder with a live plain-English preview, per-channel delivery, and alert history. |
-| 🤖 **AI anomaly detection** | Rolling 24h z-score on error rate & p99 latency; anomalies trigger a rate-limited, deduplicated LLM incident summary. |
-| 🟢 **Public status page** | Auto-generated per project — overall status badge, 90-day uptime bars, incident timelines, email subscribe/unsubscribe. |
+| 📊 **Live dashboard** | Request volume, stacked 2xx/4xx/5xx response codes, animated stat cards with sparklines, and a tailing request log — all pushed over WebSockets/SSE as traffic happens. |
+| 🔎 **Endpoint explorer** | Sortable per-route table with p50/p95/p99 latency, error rate and a derived health score, filterable by route and HTTP method. |
+| 🤖 **AI anomaly detection** | Rolling 24h z-score on error rate & p99 latency; anomalies trigger a rate-limited, deduplicated LLM incident summary (Cerebras `llama-3.3-70b`). |
 | ⚡ **Real-time everything** | Socket.io for live metrics + incidents, SSE with `Last-Event-ID` resume for the live log tail — zero missed events on reconnect. |
 | 🏢 **Multi-tenant by default** | Organizations, memberships, and per-project API keys with Postgres Row-Level Security as a DB-level tenant-isolation backstop. |
 | 🔐 **Google OAuth + sessions** | NextAuth/Auth.js sign-in; the browser never sees a raw ingest key — reads go through a session-scoped BFF proxy. |
-| 📦 **Two official SDKs** | JavaScript/TypeScript (Express, Fastify) and Python (FastAPI, Django, Flask), both with automatic route normalisation and trace propagation. |
+| 📦 **Two official SDKs** | JavaScript/TypeScript (Express) and Python (FastAPI/ASGI), both with automatic route normalisation and background batching that never blocks your app. |
 
 <a id="screenshots"></a>
 
@@ -77,28 +74,6 @@ Liveboard is a self-hostable API observability platform — the open-source piec
 
 **Endpoint Explorer**
 <img src="public/shots/endpoints.png" alt="Endpoint explorer" width="100%" />
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**Distributed Traces**
-<img src="public/shots/traces.png" alt="Distributed trace flame graph" width="100%" />
-
-</td>
-<td width="50%">
-
-**Alert Rules**
-<img src="public/shots/alerts.png" alt="Alert rules" width="100%" />
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-**Public Status Page**
-<img src="public/shots/status.png" alt="Public status page" width="100%" />
 
 </td>
 </tr>
@@ -154,7 +129,7 @@ import liveboard from "liveboard-sdk";
 app.use(liveboard.middleware({ apiKey }));
 ```
 
-Works with your existing **Express** or **Fastify** app.
+Works with your existing **Express** app.
 
 </td>
 <td valign="top">
@@ -169,13 +144,13 @@ from liveboard.asgi import LiveBoardMiddleware
 app.add_middleware(LiveBoardMiddleware, api_key=key)
 ```
 
-Works with **FastAPI**, **Django**, or **Flask**.
+Works with **FastAPI** and any other ASGI framework (Starlette).
 
 </td>
 </tr>
 </table>
 
-Every adapter normalises dynamic route segments (`/users/507f191e...` → `/users/:id`), propagates an `x-trace-id` header across services, and tags events with the authenticated `user_id` when it can find one — powering the endpoint explorer, trace viewer, and per-user error breakdowns out of the box.
+Both adapters normalise dynamic route segments (`/users/507f191e...` → `/users/:id`), echo an `x-trace-id` correlation header, and tag events with the authenticated `user_id` when they can find one — powering the endpoint explorer and per-user error breakdowns out of the box.
 
 <a id="architecture"></a>
 
@@ -184,16 +159,16 @@ Every adapter normalises dynamic route segments (`/users/507f191e...` → `/user
 ```mermaid
 flowchart LR
     subgraph SDKs["Client SDKs"]
-        JS["liveboard-sdk JS<br/>Express · Fastify"]
-        PY["liveboard-sdk Python<br/>FastAPI · Django · Flask"]
+        JS["liveboard-sdk JS<br/>Express"]
+        PY["liveboard-sdk Python<br/>FastAPI / ASGI"]
     end
 
     JS -->|"x-api-key, batched events"| INGEST
     PY -->|"x-api-key, batched events"| INGEST
 
-    INGEST["FastAPI Ingest<br/>POST /v1/ingest, /v1/spans"] --> STREAM[["Redis Streams<br/>events:project_id"]]
+    INGEST["FastAPI Ingest<br/>POST /v1/ingest"] --> STREAM[["Redis Streams<br/>events:project_id"]]
     STREAM --> WORKER["Aggregation Worker<br/>asyncpg COPY, at-least-once"]
-    WORKER --> DB[("TimescaleDB<br/>events · events_1min · spans")]
+    WORKER --> DB[("TimescaleDB<br/>events · events_1min · incidents")]
 
     METRICS["Metrics Worker<br/>1s tick"] --> DB
     METRICS -->|pub/sub| RT["Socket.io + SSE"]
@@ -270,22 +245,21 @@ cd packages/sdk-python && ruff check liveboard/
 
 ```
 liveboard/
-├── app/                    # Next.js App Router — dashboard, auth, status page, BFF routes
-│   ├── (dashboard)/        #   overview · endpoints · traces · alerts · settings
-│   ├── api/                #   lb/[...path] BFF proxy, auth, projects, realtime-token
-│   └── status/[slug]/      #   public status page + subscribe/unsubscribe
-├── components/             # React components (charts, dashboard, traces, status, landing…)
-├── hooks/                  # useMetrics, useLiveLog, useTraces, useWebSocket, …
+├── app/                    # Next.js App Router — dashboard, auth, BFF routes
+│   ├── (dashboard)/        #   overview · endpoints · settings
+│   └── api/                #   lb/[...path] BFF proxy, auth, projects, realtime-token
+├── components/             # React components (charts, dashboard, endpoints, landing…)
+├── hooks/                  # useMetrics, useLiveLog, useWebSocket, useApiQuery, …
 ├── lib/                    # api-client, socket, realtime helpers
 ├── apps/api/               # FastAPI backend
-│   ├── api/routes/         #   ingest · query · alerts · spans · projects · internal · public_status
-│   ├── worker/             #   aggregator · metrics · anomaly (AI) · alerts
+│   ├── api/routes/         #   ingest · query · projects · internal
+│   ├── worker/             #   aggregator · metrics · anomaly (AI)
 │   ├── realtime/           #   socket_server · sse · pubsub · tokens
 │   ├── streams/            #   Redis Streams producer
-│   └── migrations/         #   Alembic migrations
+│   └── migrations/         #   Alembic migrations (001 → 004)
 ├── packages/
-│   ├── sdk-js/              # liveboard-sdk (npm) — Express, Fastify
-│   └── sdk-python/          # liveboard-sdk (PyPI) — FastAPI, Django, Flask
+│   ├── sdk-js/              # liveboard-sdk (npm) — Express
+│   └── sdk-python/          # liveboard-sdk (PyPI) — FastAPI / ASGI
 ├── infra/
 │   └── docker-compose.yml   # postgres · redis · api · worker · frontend
 └── .env.example              # every config variable, documented
@@ -299,13 +273,15 @@ Liveboard is shipped through self-hosted, multi-tenant SaaS foundations (organiz
 
 - [ ] CLI (`liveboard-cli`) for local onboarding and key management
 - [ ] Hosted Mintlify docs site — quick start, SDK reference, self-hosting guide, architecture
-- [ ] Custom domains for public status pages
+- [ ] Alerting: threshold rules with Slack/webhook delivery
+- [ ] Public status pages with 90-day uptime history
+- [ ] Distributed tracing: flame graphs and a service dependency map
 - [ ] Per-tenant retention policies and plan-gated quotas
 - [ ] Billing (Stripe) — free/pro tiers
 - [ ] Production deploy guide (Railway for API/worker, Vercel for the dashboard)
 - [ ] npm / PyPI publish of `liveboard-sdk` for outside consumers
 
-Check [open issues](https://github.com/ryzrr/liveboard/issues) or open one — good-first-issue-sized SDK adapters (Ruby, Go) and alert channels (webhook, PagerDuty) are great starting points.
+Check [open issues](https://github.com/ryzrr/liveboard/issues) or open one — good-first-issue-sized SDK adapters (Fastify, Django, Flask, Go) are great starting points.
 
 <a id="contributing-anchor"></a>
 

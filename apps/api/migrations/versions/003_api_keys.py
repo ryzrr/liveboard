@@ -1,7 +1,7 @@
 """API keys table — multiple keys per project, rotation + revocation
 
-Revision ID: 004
-Revises: 003
+Revision ID: 003
+Revises: 002
 Create Date: 2026-07-18
 
 Moves API-key auth from the single `projects.api_key` column to a dedicated
@@ -11,8 +11,8 @@ Moves API-key auth from the single `projects.api_key` column to a dedicated
 
 from alembic import op
 
-revision = "004"
-down_revision = "003"
+revision = "003"
+down_revision = "002"
 branch_labels = None
 depends_on = None
 

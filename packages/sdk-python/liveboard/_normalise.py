@@ -12,10 +12,6 @@ _OBJECT_ID = re.compile(r"^[0-9a-f]{24}$", re.I)
 _INTEGER = re.compile(r"^\d+$")
 _MIXED_ID = re.compile(r"^[a-zA-Z0-9_-]{6,}$")
 
-# Django: <int:pk> or <slug> → :pk / :slug
-_DJANGO_PARAM = re.compile(r"<(?:[^:>]+:)?([^>]+)>")
-# Flask: <int:user_id> or <user_id> → :user_id
-_FLASK_PARAM = re.compile(r"<(?:[^:>]+:)?([^>]+)>")
 
 
 def _is_id_segment(segment: str) -> bool:
@@ -50,26 +46,6 @@ def route_from_path_params(path: str, path_params: dict[str, str]) -> str:
     for key, value in sorted(path_params.items(), key=lambda kv: -len(str(kv[1]))):
         route = route.replace(f"/{value}", f"/{{{key}}}", 1)
     return route
-
-
-def normalise_django_pattern(pattern: str) -> str:
-    """
-    Convert a Django URL pattern to a normalised route.
-    users/<int:user_id>/posts/<slug:post_slug>/ → /users/:user_id/posts/:post_slug
-    """
-    route = pattern.rstrip("/")
-    route = _DJANGO_PARAM.sub(lambda m: f":{m.group(1)}", route)
-    # Catch any remaining raw regex groups
-    route = re.sub(r"\([^)]+\)", ":id", route)
-    return route if route.startswith("/") else f"/{route}"
-
-
-def normalise_flask_rule(rule: str) -> str:
-    """
-    Convert a Flask URL rule to a normalised route.
-    /users/<int:user_id> → /users/:user_id
-    """
-    return _FLASK_PARAM.sub(lambda m: f":{m.group(1)}", rule)
 
 
 def extract_user_id(authorization: Optional[str]) -> Optional[str]:

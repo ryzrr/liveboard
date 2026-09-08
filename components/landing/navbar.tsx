@@ -10,7 +10,6 @@ import { primaryButtonClass } from "@/components/landing/button-styles";
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Detection", href: "#detection" },
-  { label: "Status page", href: "#status" },
 ];
 
 const GITHUB_URL = "https://github.com/ryzrr/liveboard";

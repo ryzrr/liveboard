@@ -3,8 +3,7 @@ import { AnimatedCounter } from "@/components/landing/animated-counter";
 
 const STATS = [
   { target: 2, label: "official SDKs" },
-  { target: 5, label: "framework adapters" },
-  { target: 4, label: "alert channels" },
+  { target: 3, label: "worker loops" },
 ];
 
 export function StatsSection() {
@@ -15,11 +14,11 @@ export function StatsSection() {
           Built to be adopted in an afternoon.
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
-          No agents, no sidecars, no new infrastructure to run. Two SDKs, five adapters, and a status page for free.
+          No agents, no sidecars, no new infrastructure to run. Two SDKs, one line of middleware, and Docker Compose.
         </p>
       </RevealOnScroll>
 
-      <RevealOnScroll delayMs={100} className="mx-auto mt-12 grid max-w-4xl grid-cols-2 divide-x divide-y divide-border border border-border sm:grid-cols-4 sm:divide-y-0">
+      <RevealOnScroll delayMs={100} className="mx-auto mt-12 grid max-w-4xl grid-cols-2 divide-x divide-y divide-border border border-border sm:grid-cols-3 sm:divide-y-0">
         {STATS.map((stat) => (
           <div key={stat.label} className="px-6 py-8 text-center">
             <div className="font-mono text-3xl font-semibold text-foreground sm:text-4xl">

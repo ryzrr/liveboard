@@ -5,9 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Zap,
-  GitBranch,
-  Bell,
-  Globe,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,9 +15,6 @@ import { UserMenu } from "@/components/auth/user-menu";
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/endpoints", label: "Endpoints", icon: Zap },
-  { href: "/traces", label: "Traces", icon: GitBranch },
-  { href: "/alerts", label: "Alerts", icon: Bell },
-  { href: "/status", label: "Status Page", icon: Globe },
 ];
 
 export function Sidebar() {
@@ -58,11 +52,6 @@ export function Sidebar() {
             >
               <Icon className={cn("h-3.5 w-3.5 flex-shrink-0", active ? "text-blue" : "")} />
               <span className="font-medium text-xs">{label}</span>
-              {href === "/alerts" && (
-                <span className="ml-auto h-4 w-4 rounded-full bg-red-dim border border-red/20 text-[9px] font-bold text-red flex items-center justify-center">
-                  2
-                </span>
-              )}
             </Link>
           );
         })}
